@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>splash.jpg</file>
+        <file>icon.png</file>
+        <file>unrar.exe</file>
+    </qresource>
+</RCC>
