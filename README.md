@@ -7,6 +7,8 @@ Double click on a server to join. It will ask for UnrealTournament.exe
 
 ## Installation
 
+For compiled binaries no installation is necessary. For source, see below:
+
 ### Arch Linux
 
 UTLauncher is available in AUR as [utlauncher-git](https://aur.archlinux.org/packages/utlauncher-git/).  Installation is as follows:
