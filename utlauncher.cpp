@@ -47,7 +47,7 @@ void UTLauncher::startServerBrowser()
 {
     splash->deleteLater();
     browser->show();
-    connect(browser, &ServerBrowser::openServer, [=](QString url) {
-        QProcess::startDetached(bootstrap.programExePath(), QStringList() << url);
+    connect(browser, &ServerBrowser::openServer, [=](QString url, bool spectate) {
+        QProcess::startDetached(bootstrap.programExePath(), QStringList() << (url + (spectate?"?SpectatorOnly=1":"")) );
     });
 }

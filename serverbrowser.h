@@ -9,6 +9,7 @@
 #include <QThread>
 #include <QTcpSocket>
 #include <QAbstractSocket>
+#include <QMenu>
 
 
 class ServerEntry : public QObject {
@@ -266,6 +267,30 @@ public:
         
 //        proxyModel.sort(4, Qt::AscendingOrder);
         
+        table->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(table, &QTableView::customContextMenuRequested, [=](QPoint pos) {
+            QModelIndex index = proxyModel.mapToSource(table->indexAt(pos));
+            if(index.row() == -1)
+                return;
+            QMenu* menu = new QMenu(this);
+            
+            auto playAction = new QAction("Play", this);
+            menu->addAction(playAction);
+            auto spectateAction = new QAction("Spectate", this);
+            menu->addAction(spectateAction);
+            menu->popup(table->viewport()->mapToGlobal(pos));
+
+            connect(playAction, &QAction::triggered, [=]() {
+                auto& entry = model->entryById(index.row());
+                emit openServer(entry.host + ":" + QString::number(entry.port));
+            });
+            connect(spectateAction, &QAction::triggered, [=]() {
+                auto& entry = model->entryById(index.row());
+                emit openServer(entry.host + ":" + QString::number(entry.port), true);
+            });
+            
+        });
+        
         table->setSortingEnabled(true);
         
         table->setModel(&proxyModel);
@@ -297,5 +322,5 @@ public:
         setCentralWidget(table);
     }
 signals:
-    void openServer(QString url);
+    void openServer(QString url, bool spectate = false);
 };
