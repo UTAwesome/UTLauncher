@@ -35,6 +35,7 @@ UTLauncher::UTLauncher(int& argc, char** argv) : QApplication(argc, argv), setti
 void UTLauncher::gotServersInfo(QJsonDocument document)
 {
     browser->loadFromJson(document.object());
+    serversRefreshTimer.singleShot(5*60000, &bootstrap, SLOT(refreshServers()));
 }
 
 void UTLauncher::prepareConfig()

@@ -19,6 +19,7 @@
 #include <QSettings>
 #include <QLabel>
 #include <QPainter>
+#include <QTimer>
 
 #include "download.h"
 #include "torrentdownloader.h"
@@ -35,6 +36,7 @@ class UTLauncher: public QApplication
     TorrentDownloader torrentDownloader;
     Bootstrap bootstrap;
     QSettings settings;
+    QTimer serversRefreshTimer;
         
     void prepareConfig();
     

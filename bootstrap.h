@@ -46,6 +46,7 @@ private slots:
     }
     
 public:  
+    
     Bootstrap(TorrentDownloader& torrentClient, QSettings& _settings, QObject* parent = nullptr) : QObject(parent), torrentDownloader(torrentClient), settings(_settings) {
         download.setTarget("https://utlauncher.rushbase.net/bootstrap.json");
 
@@ -154,6 +155,10 @@ public:
 #else
         return releasePath + "/WindowsNoEditor/UnrealTournament/Binaries/Win64/UnrealTournament.exe";
 #endif
+    }
+public slots:
+    void refreshServers() {
+        downloadServers.download();
     }
     
 signals:
