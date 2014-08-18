@@ -42,7 +42,7 @@ add_definitions(-DNO_DOWNLOAD)
 
 if(STATIC_BUILD_WIN32)
 	add_definitions(-DSTATIC_PLUGIN_WINDOWS)
-	target_link_libraries(UTLauncher Qt5::Widgets Qt5::QWindowsIntegrationPlugin Qt5::Network ${LIBTORRENT_LIBRARIES} z harfbuzz opengl32 jpeg png pcre16 sicuuc glib-2.0 sicudt intl iconv ws2_32 winmm imm32 freetype bz2 ssl crypto boost_system )
+	target_link_libraries(UTLauncher Qt5::Widgets Qt5::QWindowsIntegrationPlugin Qt5::Network ${LIBTORRENT_LIBRARIES} z harfbuzz opengl32 jpeg png pcre16 sicuuc glib-2.0 sicudt intl iconv ws2_32 winmm imm32 freetype bz2 ssl crypto boost_system-mt )
 else()
 	target_link_libraries(UTLauncher Qt5::Widgets Qt5::Network ${LIBTORRENT_LIBRARIES} ssl crypto boost_system )
 endif()
