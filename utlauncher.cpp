@@ -1,9 +1,24 @@
 #include "utlauncher.h"
 #include "serverbrowser.h"
+#include "awesome.h"
+
+#include <QStatusBar>
+
+#include "configdialog.h"
+
+QtAwesome* awesome;
 
 UTLauncher::UTLauncher(int& argc, char** argv) : QApplication(argc, argv), settings(QSettings::IniFormat, QSettings::UserScope, "CodeCharm", "UTLauncher"), bootstrap(torrentDownloader, settings) {
     QPixmap pixmap(":/splash.jpg");
     splash = new UTSplash(pixmap);
+    
+    awesome = new QtAwesome(qApp);
+    awesome->initFontAwesome();
+    QWidget w;
+    awesome->setDefaultOption( "color" , w.palette().color(w.foregroundRole()) );
+    awesome->setDefaultOption( "color-active" , w.palette().color(w.foregroundRole()) );
+    awesome->setDefaultOption( "color-selected" , w.palette().color(w.foregroundRole()) );
+    
     
     splash->setGeometry(
         QStyle::alignedRect(
@@ -47,7 +62,47 @@ void UTLauncher::startServerBrowser()
 {
     splash->deleteLater();
     browser->show();
-    connect(browser, &ServerBrowser::openServer, [=](QString url, bool spectate) {
-        QProcess::startDetached(bootstrap.programExePath(), QStringList() << (url + (spectate?"?SpectatorOnly=1":"")) );
+    browser->setMOTD(bootstrap.MOTD());
+    
+    auto hasEditorSupport = [=] {
+        QString editorPath = bootstrap.editorExePath();
+        QString projectPath = bootstrap.projectPath();
+        return QFile::exists(editorPath) && QFile::exists(projectPath);
+    };
+    
+    auto openSettings = [=](bool mandatoryEditor = false) {
+        ConfigDialog dialog(settings, mandatoryEditor);
+        dialog.exec();
+        browser->setEditorSupport(hasEditorSupport());
+    };
+    
+    connect(browser, &ServerBrowser::openServer, [=](QString url, bool spectate, bool inEditor) {
+
+        if(inEditor) {
+            QString editorPath = bootstrap.editorExePath();
+            QString projectPath = bootstrap.projectPath();
+            if(!editorPath.length() || !projectPath.length()) {
+                openSettings(true);
+                return;
+            }
+            QProcess::startDetached(editorPath, QStringList() << projectPath << "-GAME" << (url + (spectate?"?SpectatorOnly=1":"")) );
+        } else {
+            QString exePath = bootstrap.programExePath();
+            if(!exePath.length()) {
+                openSettings();
+                return;
+            }
+            QProcess::startDetached(exePath, QStringList() << (url + (spectate?"?SpectatorOnly=1":"")) );
+        }
     });
+    
+    disconnect(&bootstrap, &Bootstrap::ready, this, &UTLauncher::prepareConfig);
+    
+    connect(&bootstrap, &Bootstrap::ready, this, [=] {
+        browser->setMOTD(bootstrap.MOTD());
+    });
+    
+    connect(browser, &ServerBrowser::openSettings, openSettings);
+    
+    browser->setEditorSupport(hasEditorSupport());
 }

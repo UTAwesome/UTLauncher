@@ -21,6 +21,7 @@ class Bootstrap : public QObject {
     Download downloadServers;
     
     QFile torrentFile;
+    QString motd;
     
     TorrentDownloader& torrentDownloader;
     QProcess unpackProcess;
@@ -28,6 +29,8 @@ class Bootstrap : public QObject {
     QString releasePath;
     QString torrentFullFile;
     QSettings& settings;
+    
+    QTimer bootstrapRedownloadTimer;
     
     enum class ErrorReason {
         UnpackingProcessError
@@ -45,7 +48,11 @@ private slots:
         }
     }
     
+    
 public:  
+    QString MOTD() {
+        return motd;
+    }
     
     Bootstrap(TorrentDownloader& torrentClient, QSettings& _settings, QObject* parent = nullptr) : QObject(parent), torrentDownloader(torrentClient), settings(_settings) {
         download.setTarget("https://utlauncher.rushbase.net/bootstrap.json");
@@ -56,8 +63,12 @@ public:
             QString url = json.value("torrentUrl").toObject().value("windows64").toString();
             //QString url = "https://utlauncher.rushbase.net/openSUSE-13.1-KDE-Live-x86_64.iso.torrent";
             
+            motd = json.value("motd").toString();
+            
             downloadServers.setTarget(json.value("serversUrl").toString());
             downloadServers.download();
+            
+            bootstrapRedownloadTimer.singleShot(15*60000, &download, SLOT(download()));
             
 #ifdef NO_DOWNLOAD
             emit ready();
@@ -139,22 +150,26 @@ public:
     QString programExePath() {
 #ifdef NO_DOWNLOAD
         QString path = settings.value("UTExePath").toString();
-        QFile utExe(path);
-        if(utExe.exists())
+        if(QFile::exists(path))
             return path;
-        path = QFileDialog::getOpenFileName(NULL, "Path to UnrealTournament executable", QString(),
-#ifdef __WIN32__
-                                            "*.exe"
-#else
-                                            QString()
-#endif
-                                           );
-        settings.setValue("UTExePath", path);
-        settings.sync();
-        return programExePath();
+        return "";
 #else
         return releasePath + "/WindowsNoEditor/UnrealTournament/Binaries/Win64/UnrealTournament.exe";
 #endif
+    }
+    
+    QString editorExePath() {
+        QString path = settings.value("UE4ExePath").toString();
+        if(QFile::exists(path))
+            return path;
+        return "";
+    }
+
+    QString projectPath() {
+        QString path = settings.value("UTProjectPath").toString();
+        if(QFile::exists(path))
+            return path;
+        return "";
     }
 public slots:
     void refreshServers() {

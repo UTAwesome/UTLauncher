@@ -5,12 +5,30 @@
 #include <QHeaderView>
 #include <QList>
 #include <QJsonArray>
+#include <QStatusBar>
 
 #include <QThread>
 #include <QTcpSocket>
 #include <QAbstractSocket>
 #include <QMenu>
+#include <QToolBar>
+#include <QTableWidget>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QItemSelectionModel>
 
+#include "awesome.h"
+
+enum class Column {
+    Country = 0,
+    PlayerCount,
+    GameMode,
+    Map,
+    Name,
+    Ping,
+    MaxColumn
+};
 
 class ServerEntry : public QObject {
     Q_OBJECT
@@ -21,6 +39,7 @@ class ServerEntry : public QObject {
     int port;
     QString map;
     QString gameMode;
+    QString countryCode;
     
     int maxPlayerCount = 0;
     int queryPort = 8890;
@@ -35,7 +54,18 @@ class ServerEntry : public QObject {
     QList<int> pingResults;
     
     QTimer queryTimer;
+    
+    struct Player {
+        QString name;
+        int score;
+        bool operator<(const Player &other) const {
+            return score<other.score;
+    }
+    };
+    QList<Player> players;
 public:
+
+    
     QString address() const {
         return host + ":" + QString::number(port);
     }
@@ -67,20 +97,29 @@ public slots:
             connect(socket, &QTcpSocket::readyRead, [=]() {
                 QString query = toQuery.takeFirst();
                 QString answer = QString(socket->readAll()).trimmed();
-                qDebug() << "query" << host << query << answer << timer.elapsed();
+                qDebug() << "Got answer" << answer;
                 if(query == "Map") {
                     map = answer;
                 } else if(query == "GameMode") {
                     gameMode = answer;
                 } else if(query == "PlayerNum") {
                     playerCount = answer.toInt();
+                } else if(query == "PlayerList") {
+                    players.clear();
+                    for(auto playerString : answer.split("\n")) {
+                        QRegExp rx("(.*) S:(-?\\d+)");
+                        if(rx.indexIn(playerString) != -1) {
+                            Player p = {rx.cap(1), rx.cap(2).toInt()};
+                            players.append(p);
+                        }
+                    }
                 }
                 
                 pingResults.append(timer.elapsed());
                 
                 if(toQuery.size()) {
-                timer.start();
-                socket->write(toQuery.first());
+                    timer.start();
+                    socket->write(toQuery.first());
                 } else {
                     socket->close();
                     pingResults.removeFirst();
@@ -106,6 +145,7 @@ public slots:
         port = rx.cap(2).toInt();
         
         name = object.value("name").toString();
+        countryCode = object.value("countryCode").toString();
         maxPlayerCount = object.value("maxPlayerCount").toInt();
         queryPort = object.value("queryPort").toInt();
     }
@@ -121,10 +161,30 @@ class ServerListModel : public QAbstractTableModel
     QList<ServerEntry*> servers;
     QMap<QString, ServerEntry*> serverMap;
 public:
+
+    int playerCount() {
+        int count = 0;
+        for(auto server: servers) {
+            if(server->ping != 999) {
+                count += server->playerCount;
+            }
+        }
+        return count;
+    }
+    
+    int serverCount() {
+        int count = 0;
+        for(auto server: servers) {
+            if(server->ping != 999)
+                count++;
+        }
+        return count;
+    }
+    
     ServerListModel(QObject* parent = nullptr) : QAbstractTableModel(parent) {
         qDebug() << setHeaderData(1, Qt::Horizontal, "PlayerCount");
         
-        emit headerDataChanged(Qt::Horizontal, 0, 3);
+        emit headerDataChanged(Qt::Horizontal, 0, (int)Column::MaxColumn-1);
     }
 
     void loadFromJson(QJsonObject object) {
@@ -192,24 +252,30 @@ public:
             return QVariant::fromValue<ServerEntry*>(entry);
         }
         
-        switch(index.column()) {
-            case 0:
+        switch((Column)index.column()) {
+            case Column::Country:
+                if(role == Qt::DecorationRole)
+                    return QPixmap(QString(":/flags/") + entry->countryCode + ".png");
+                if(role == Qt::ToolTipRole )
+                    return entry->countryCode;
+                break;
+            case Column::PlayerCount:
                 if(role == Qt::DisplayRole)
                     return QString("%1/%2").arg(entry->playerCount).arg(entry->maxPlayerCount);
                 break;
-            case 1:
+            case Column::GameMode:
                 if(role == Qt::DisplayRole)
                     return humanizeGameMode(entry->gameMode);
                 break;
-            case 2:
+            case Column::Map:
                 if(role == Qt::DisplayRole)
                     return entry->map;
                 break;
-            case 3:
+            case Column::Name:
                 if(role == Qt::DisplayRole)
                     return entry->name;
                 break;
-            case 4:
+            case Column::Ping:
                 if(role == Qt::DisplayRole)
                     return entry->ping;
                 break;
@@ -220,7 +286,7 @@ public:
     
     QVariant headerData(int section, Qt::Orientation orientation, int role) const {
         static QStringList headers = {
-            "Count", "Gametype", "Map", "Server Name", "Ping"
+            "", "Count", "Gametype", "Map", "Server Name", "Ping"
         };
         if(orientation == Qt::Horizontal && role == Qt::DisplayRole) {
             return headers[section];
@@ -235,7 +301,7 @@ public:
     }
     
     int columnCount(const QModelIndex&) const {
-        return 5;
+        return (int)Column::MaxColumn;
     }
     const ServerEntry& entryById(int id) const {
         return *servers[id];
@@ -245,27 +311,204 @@ public:
 
 #include <QSortFilterProxyModel>
 
+class ServerListProxyModel : public QSortFilterProxyModel
+{
+    Q_OBJECT
+    ServerListModel* model;
+public:
+    ServerListProxyModel(ServerListModel* _model, QObject* parent = 0) : QSortFilterProxyModel(parent), model(_model) {
+        
+    }
+ protected:
+     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const {
+         QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
+     }
+     bool lessThan(const QModelIndex &left, const QModelIndex &right) const {
+         if(left.column() == (int)Column::Country && right.column() == (int)Column::Country) {
+             qDebug() << left << right;
+             auto& leftEntry = model->entryById(left.row());
+             auto& rightEntry = model->entryById(right.row());
+             return QString::compare(leftEntry.countryCode, rightEntry.countryCode) < 0;
+         }
+         
+         QSortFilterProxyModel::lessThan(left, right);
+     }
+};
+
 class ServerBrowser : public QMainWindow
 {
     Q_OBJECT
     QTableView* table;
     ServerListModel* model;
-    QSortFilterProxyModel proxyModel;
+    ServerListProxyModel proxyModel;
+    bool m_editorSupport = false;
+
+    QTableWidget* playerListWidget;
+    QLabel* motdLabel;
+    QLabel* statusLabel;
+    QAction* playAction;
+    QAction* spectateAction;
+        
 public:
+    
+    void setMotd() {
+        
+    }
+    
     
     void loadFromJson(QJsonObject object) {
         model->loadFromJson(object);
     }
-    ServerBrowser(QWidget* parent = nullptr) : QMainWindow(parent) {
+    void setMOTD(QString motd) {
+        motdLabel->setText(motd);
+    }
+    
+    ServerBrowser(QWidget* parent = nullptr) : model(new ServerListModel(this)), proxyModel(model, this), QMainWindow(parent) {
         table = new QTableView(this);
-  
-        model = new ServerListModel(this);
+          
+        setMinimumSize(QSize(1000, 580));
         
-        setMinimumSize(QSize(640, 480));
+        setWindowIcon(QIcon(":/icon.png"));
+        
+        auto updatePlayersFromEntry = [=] (const ServerEntry& entry){
+            playerListWidget->setRowCount(entry.players.length());
+            
+            auto players = entry.players;
+            qSort(players.begin(), players.end());
+            int row = 0;
+            for(auto player: players) {
+                auto item = new QTableWidgetItem(player.name);
+                item->setTextAlignment(Qt::AlignCenter);
+                playerListWidget->setItem(row, 0, item);
+                item = new QTableWidgetItem(QString::number(player.score));
+                item->setTextAlignment(Qt::AlignCenter);
+                playerListWidget->setItem(row++, 1, item);
+            }
+        };
+        
+        
+        {
+            statusLabel = new QLabel("Status test", this);
+            statusLabel->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+            statusLabel->setMinimumWidth(200);
+            
+            motdLabel = new QLabel("", this);
+            motdLabel->setTextFormat(Qt::RichText);
+            motdLabel->setAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+
+            
+            //motdLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+            motdLabel->setOpenExternalLinks(true);
+            
+            statusBar()->addPermanentWidget(motdLabel, 1);
+            statusBar()->addPermanentWidget(statusLabel);
+        }
+        
+        connect(model, &ServerListModel::dataChanged, [=](QModelIndex index, QModelIndex) {
+            statusLabel->setText(QString("Total %1 servers / %2 players").arg(model->serverCount()).arg(model->playerCount()));
+            if(index.row() == -1)
+                return;
+            auto selectedIndex = proxyModel.mapToSource(table->currentIndex());
+            if(selectedIndex.row() == -1)
+                return;
+            auto& entry = model->entryById(index.row());
+            if(selectedIndex.row() != index.row())
+                return;
+            updatePlayersFromEntry(entry);
+            
+        });
+        
         
         proxyModel.setSourceModel(model);
         
-//        proxyModel.sort(4, Qt::AscendingOrder);
+        {
+            auto toolbar = new QToolBar("Actions", this);
+            toolbar->setToolButtonStyle( Qt::ToolButtonTextUnderIcon );
+            
+            // toolbar->setToolButtonStyle( Qt::ToolButtonFollowStyle );
+            {
+                playAction = new QAction(awesome->icon(fa::gamepad, {
+                    {"scale-factor", 0.8}
+                }), "Play", this);
+                playAction->setDisabled(true);
+                toolbar->addAction(playAction);
+                connect(playAction, &QAction::triggered, [=]() {
+                    auto index = proxyModel.mapToSource(table->currentIndex());
+                    if(index.row() == -1)
+                        return;
+                    auto& entry = model->entryById(index.row());
+                    emit openServer(entry.host + ":" + QString::number(entry.port), false);
+                });
+            }
+            {
+                spectateAction = new QAction(awesome->icon(fa::eye, {
+                    {"scale-factor", 0.8}
+                }), "Spectate", this);
+                spectateAction->setDisabled(true);
+                toolbar->addAction(spectateAction);
+                connect(spectateAction, &QAction::triggered, [=]() {
+                    auto index = proxyModel.mapToSource(table->currentIndex());
+                    if(index.row() == -1)
+                        return;
+                    auto& entry = model->entryById(index.row());
+                    emit openServer(entry.host + ":" + QString::number(entry.port), true);
+                });
+            }
+            toolbar->addSeparator();
+            {
+                auto settingsAction = new QAction(awesome->icon(fa::cogs, {
+                    {"scale-factor", 0.8}
+                }), "Settings", this);
+                
+                connect(settingsAction, &QAction::triggered, [=] {
+                    emit openSettings();
+                });
+                toolbar->addAction(settingsAction);
+            }
+            addToolBar(Qt::LeftToolBarArea, toolbar);
+        }
+        {
+            auto toolbar = new QToolBar("Currently playing", this);
+            
+            auto widget = new QWidget(this);
+            auto layout = new QVBoxLayout;
+            
+            auto labelWidget = new QWidget(this);
+            {
+                auto label = new QLabel(this);
+                label->setPixmap(awesome->icon(fa::users).pixmap(32, 32));
+                
+                auto layout = new QHBoxLayout;
+                labelWidget->setLayout(layout);
+                layout->addWidget(label);
+                label->setFixedWidth(70);
+                label->setAlignment(Qt::AlignCenter|Qt::AlignVCenter);
+                label = new QLabel(" Currently playing", this);
+                label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+                layout->addWidget(label);
+                layout->setContentsMargins(QMargins(0, 0, 0, 0));
+                layout->setSpacing(0);
+            }
+            layout->addWidget(labelWidget);
+            playerListWidget = new QTableWidget(this);
+            playerListWidget->setColumnCount(2);
+            playerListWidget->horizontalHeader()->setStretchLastSection(true);
+            playerListWidget->horizontalHeader()->setSectionResizeMode( 0, QHeaderView::Stretch);
+            playerListWidget->horizontalHeader()->setSectionResizeMode( 1, QHeaderView::Fixed);
+            playerListWidget->setHorizontalHeaderLabels(QStringList() << "Name" << "Score");
+            playerListWidget->horizontalHeader()->resizeSection(0, 150);
+            
+            layout->addWidget(playerListWidget);
+            
+            widget->setLayout(layout);
+            
+            toolbar->addWidget(widget);
+            layout->setContentsMargins(QMargins(0, 0, 0, 0));
+            layout->setSpacing(0);
+            //toolbar->setLayoutDirection(Qt::Vertical);
+            
+            addToolBar(Qt::RightToolBarArea, toolbar);
+        }
         
         table->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(table, &QTableView::customContextMenuRequested, [=](QPoint pos) {
@@ -274,12 +517,11 @@ public:
                 return;
             QMenu* menu = new QMenu(this);
             
-            auto playAction = new QAction("Play", this);
+            
+            auto playAction = new QAction(awesome->icon( fa::gamepad ),"Play", this);
             menu->addAction(playAction);
-            auto spectateAction = new QAction("Spectate", this);
+            auto spectateAction = new QAction(awesome->icon( fa::eye ), "Spectate", this);
             menu->addAction(spectateAction);
-            menu->popup(table->viewport()->mapToGlobal(pos));
-
             connect(playAction, &QAction::triggered, [=]() {
                 auto& entry = model->entryById(index.row());
                 emit openServer(entry.host + ":" + QString::number(entry.port));
@@ -289,27 +531,65 @@ public:
                 emit openServer(entry.host + ":" + QString::number(entry.port), true);
             });
             
+            
+            if(m_editorSupport) {
+                menu->addSeparator();
+                auto playAction = new QAction(awesome->icon( fa::gamepad ),"Play (Editor)", this);
+                menu->addAction(playAction);
+                auto spectateAction = new QAction(awesome->icon( fa::eye ), "Spectate (Editor)", this);
+                menu->addAction(spectateAction);
+                connect(playAction, &QAction::triggered, [=]() {
+                    auto& entry = model->entryById(index.row());
+                    emit openServer(entry.host + ":" + QString::number(entry.port), false, true);
+                });
+                connect(spectateAction, &QAction::triggered, [=]() {
+                    auto& entry = model->entryById(index.row());
+                    emit openServer(entry.host + ":" + QString::number(entry.port), true, true);
+                });
+                
+            }
+            
+            
+            menu->popup(table->viewport()->mapToGlobal(pos));
+            
         });
         
         table->setSortingEnabled(true);
-        
+        table->setSelectionMode(QAbstractItemView::SingleSelection);
         table->setModel(&proxyModel);
         table->horizontalHeader()->setStretchLastSection(true);
         proxyModel.setDynamicSortFilter(true);
+
+        connect(table->selectionModel(), &QItemSelectionModel::currentRowChanged, [=](const QModelIndex & current, const QModelIndex & previous ) {
+            auto index = proxyModel.mapToSource(current);
+            
+            playAction->setDisabled(index.row()==-1);
+            spectateAction->setDisabled(index.row()==-1);
+            
+            if(index.row() < 0) {
+                playerListWidget->setRowCount(0);
+                return;
+            }
+            auto& entry = model->entryById(index.row());
+            updatePlayersFromEntry(entry);
+        });
+
         
-        proxyModel.setFilterKeyColumn(4);
+        proxyModel.setFilterKeyColumn((int)Column::Ping);
         proxyModel.setFilterRegExp("^(?!999$)\\d+");
         
-        table->sortByColumn(4, Qt::AscendingOrder);
+        table->sortByColumn((int)Column::Ping, Qt::AscendingOrder);
 
         for(int i = 0;i < 4;++i)
             table->horizontalHeader()->setSectionResizeMode( i, QHeaderView::ResizeToContents);
-        table->horizontalHeader()->setSectionResizeMode( 3, QHeaderView::Stretch);
-        table->horizontalHeader()->setSectionResizeMode( 4, QHeaderView::Fixed);
-        table->horizontalHeader()->resizeSection(4, 40);
+        
+        table->horizontalHeader()->resizeSection((int)Column::GameMode, 40);
+        table->horizontalHeader()->setSectionResizeMode( (int)Column::Name, QHeaderView::Stretch);
+        table->horizontalHeader()->setSectionResizeMode( (int)Column::Map, QHeaderView::Stretch);
+        table->horizontalHeader()->setSectionResizeMode( (int)Column::Ping, QHeaderView::Fixed);
+        table->horizontalHeader()->resizeSection((int)Column::Ping, 40);
         
         table->setSelectionBehavior(QAbstractItemView::SelectRows);
-        //table->setHorizontalHeaderLabels(QStringList() << "PlayerCount" << "Name" << "Ping");
         
         
         connect(table, &QTableView::doubleClicked, [=](const QModelIndex& sortedIndex) {
@@ -321,6 +601,15 @@ public:
         
         setCentralWidget(table);
     }
+    bool editorSupport() const {
+        return m_editorSupport;
+    }
+    
+public slots:
+    void setEditorSupport(bool status) {
+        m_editorSupport = status;
+    }
 signals:
-    void openServer(QString url, bool spectate = false);
+    void openSettings();
+    void openServer(QString url, bool spectate = false, bool inEditor = false);
 };
