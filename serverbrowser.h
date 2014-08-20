@@ -227,7 +227,7 @@ public:
             entry->updateFromJson(object);
             
             connect(entry, &ServerEntry::queryDone, [=](int id) {
-                emit dataChanged(createIndex(id, 0),createIndex(id, 4));
+                emit dataChanged(createIndex(id, 0),createIndex(id, (int)Column::MaxColumn-1));
             });
             
             entry->query();
@@ -338,6 +338,8 @@ public:
          QSortFilterProxyModel::lessThan(left, right);
      }
 };
+
+#include <QDesktopWidget>
 
 class ServerBrowser : public QMainWindow
 {
@@ -482,18 +484,25 @@ public:
             auto labelWidget = new QWidget(this);
             {
                 auto label = new QLabel(this);
-                label->setPixmap(awesome->icon(fa::users).pixmap(32, 32));
                 
+                int dpiX = qApp->desktop()->logicalDpiX();
+                float dpiScale = (float)dpiX / 96;
+                label->setPixmap(awesome->icon(fa::users, {
+                    {"scale-factor", 0.8}
+                }).pixmap(dpiScale*32, dpiScale*32));
+                
+                                
                 auto layout = new QHBoxLayout;
                 labelWidget->setLayout(layout);
                 layout->addWidget(label);
-                label->setFixedWidth(70);
-                label->setAlignment(Qt::AlignCenter|Qt::AlignVCenter);
-                label = new QLabel(" Currently playing", this);
-                label->setAlignment(Qt::AlignLeft|Qt::AlignVCenter);
+                label->setFixedWidth(32*dpiScale + 16);
+                label->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+                label = new QLabel("Currently playing", this);
+                label->setAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+
                 layout->addWidget(label);
                 layout->setContentsMargins(QMargins(0, 0, 0, 0));
-                layout->setSpacing(0);
+//                layout->setSpacing(16);
             }
             layout->addWidget(labelWidget);
             playerListWidget = new QTableWidget(this);
@@ -573,9 +582,9 @@ public:
         connect(table->selectionModel(), &QItemSelectionModel::currentRowChanged, [=](const QModelIndex & current, const QModelIndex & previous ) {
             auto index = proxyModel.mapToSource(current);
             
+            qDebug() << "Selected row" << index.row();
             playAction->setDisabled(index.row()==-1);
             spectateAction->setDisabled(index.row()==-1);
-            
             if(index.row() < 0) {
                 playerListWidget->setRowCount(0);
                 return;

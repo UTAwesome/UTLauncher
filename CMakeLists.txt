@@ -4,6 +4,7 @@ project(UTLauncher)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules")
 include(MingwResource)
+include(Version)
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -40,9 +41,12 @@ else()
 	set(BUILD_TYPE "")
 endif()
 
+set(UTLauncher_VERSION "0.2.4" CACHE STRING "Version number" FORCE INTERNAL)
+set_version_number(UTLauncher)
+
+add_definitions(-DNO_DOWNLOAD -DVERSION_MAJOR=${UTLauncher_VERSION_MAJOR} -DVERSION_MINOR=${UTLauncher_VERSION_MINOR} -DVERSION_PATCH=${UTLauncher_VERSION_PATCH})
 add_executable(UTLauncher ${BUILD_TYPE} ${resources} ${rc_srcs} main.cpp utlauncher.cpp download.cpp utsplash.cpp bootstrap.cpp serverbrowser.cpp configdialog.cpp $<TARGET_OBJECTS:QtAwesome>)
 
-add_definitions(-DNO_DOWNLOAD)
 
 if(STATIC_BUILD_WIN32)
 	pkg_check_modules(QT5WIDGETS Qt5Widgets)

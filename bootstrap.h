@@ -13,6 +13,7 @@
 #include <QSettings>
 #include <QDir>
 #include <QFileDialog>
+#include <QMessageBox>
 
 class Bootstrap : public QObject {
     Q_OBJECT
@@ -63,7 +64,21 @@ public:
             QString url = json.value("torrentUrl").toObject().value("windows64").toString();
             //QString url = "https://utlauncher.rushbase.net/openSUSE-13.1-KDE-Live-x86_64.iso.torrent";
             
-            motd = json.value("motd").toString();
+            QRegExp rx("(\\d+)\\.(\\d+)\\.(\\d+)");
+            auto latestVersion = json.value("latestVersion").toString();
+            if(rx.indexIn(latestVersion) == 0) {
+                auto latestMajor = rx.cap(1).toInt();
+                auto latestMinor = rx.cap(2).toInt();
+                auto latestPatch = rx.cap(3).toInt();
+                
+                if(latestMajor != VERSION_MAJOR ||
+                    latestMinor != VERSION_MINOR ||
+                    latestPatch != VERSION_PATCH) {
+                    QMessageBox::information(NULL, "Newer version is available", QString("Current version: %1.%2.%3<br>Latest version: %4 %5 %6<br><br>").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_PATCH).arg(latestMajor).arg(latestMinor).arg(latestPatch) + json.value("downloadMessage").toString());
+                }
+            }
+            
+            motd = json.value("MOTD").toString();
             
             downloadServers.setTarget(json.value("serversUrl").toString());
             downloadServers.download();

@@ -41,6 +41,8 @@ class UTLauncher: public QApplication
     
     void prepareConfig();
     
+    QColor iconColor() const;
+    
     void startServerBrowser();
 private slots:
     void closeSplash();

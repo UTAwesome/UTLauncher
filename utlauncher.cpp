@@ -8,6 +8,11 @@
 
 QtAwesome* awesome;
 
+QColor UTLauncher::iconColor() const {
+    QWidget w;
+    return w.palette().color(w.foregroundRole());
+}
+
 UTLauncher::UTLauncher(int& argc, char** argv) : QApplication(argc, argv), settings(QSettings::IniFormat, QSettings::UserScope, "CodeCharm", "UTLauncher"), bootstrap(settings) {
     QPixmap pixmap(":/splash.jpg");
     splash = new UTSplash(pixmap);
@@ -17,10 +22,10 @@ UTLauncher::UTLauncher(int& argc, char** argv) : QApplication(argc, argv), setti
     
     awesome = new QtAwesome(qApp);
     awesome->initFontAwesome();
-    QWidget w;
-    awesome->setDefaultOption( "color" , w.palette().color(w.foregroundRole()) );
-    awesome->setDefaultOption( "color-active" , w.palette().color(w.foregroundRole()) );
-    awesome->setDefaultOption( "color-selected" , w.palette().color(w.foregroundRole()) );
+    
+    awesome->setDefaultOption( "color" , iconColor() );
+    awesome->setDefaultOption( "color-active" , iconColor() );
+    awesome->setDefaultOption( "color-selected" , iconColor() );
     
     
     splash->setGeometry(

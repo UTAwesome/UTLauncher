@@ -23,10 +23,6 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
     }
 }
 
-// void qInitResources_QtAwesome() {
-//     
-// }
-
 int main(int argc, char** argv)
 {
     qInstallMessageHandler(myMessageOutput);
@@ -35,8 +31,9 @@ int main(int argc, char** argv)
     QCoreApplication::setOrganizationDomain("codecharm.co.uk");
     QCoreApplication::setApplicationName("UTLauncher");
 
-    
+//    QApplication::setDesktopSettingsAware(false);
     UTLauncher app(argc, argv);
+    
     
     QSystemTrayIcon icon(QIcon(":/icon.png"));
     icon.show();

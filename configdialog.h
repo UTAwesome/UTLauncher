@@ -28,7 +28,9 @@ public:
         auto layout = new QHBoxLayout;
         auto labelWidget = new QLabel(label, this);
         labelWidget->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-        labelWidget->setMinimumWidth(230);
+        //labelWidget->setMinimumWidth(230);
+
+        layout->addStretch(1);
         layout->addWidget(labelWidget);
         auto lineEdit = new QLineEdit(this);
         lineEdit->setMinimumWidth(300);
@@ -144,6 +146,8 @@ class LocationsPage : public QWidget
     }
 };
 
+#include <QApplication>
+
 class ConfigDialog : public QDialog
 {
     Q_OBJECT
@@ -156,15 +160,26 @@ public:
         contentsWidget->setViewMode(QListView::IconMode);
         contentsWidget->setIconSize(QSize(32, 32));
         contentsWidget->setMovement(QListView::Static);
-        contentsWidget->setMaximumWidth(96);
-        contentsWidget->setSpacing(8);
-                
+        contentsWidget->setMaximumWidth(100);
+        contentsWidget->setSpacing(10);
+        contentsWidget->setFlow(QListView::TopToBottom);
+
+        auto f = qApp->font();
+        QFontMetrics fm(f);
+        
+        contentsWidget->setContentsMargins(0,0,0,0);
+        
         pagesWidget = new QStackedWidget;
         pagesWidget->addWidget(new LocationsPage(settings, mandatoryEditor));
         
         auto closeButton = new QPushButton("Close");
         
         createIcons();
+
+        auto r = contentsWidget->visualItemRect(contentsWidget->item(0));
+        contentsWidget->setMaximumWidth(r.width() + 20);
+        contentsWidget->setHorizontalScrollMode(QAbstractItemView::ScrollPerItem);
+        contentsWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         
         contentsWidget->setCurrentRow(0);
         
@@ -194,6 +209,7 @@ public:
         configButton->setText(tr("Locations"));
         configButton->setTextAlignment(Qt::AlignHCenter);
         configButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        
 
         connect(contentsWidget,
                 SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)),
