@@ -375,6 +375,7 @@ public:
         setMinimumSize(QSize(1000, 580));
         
         setWindowIcon(QIcon(":/icon.png"));
+        setWindowTitle(QString("UTLauncher %1.%2.%3").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_PATCH));
         
         auto updatePlayersFromEntry = [=] (const ServerEntry& entry){
             playerListWidget->setRowCount(entry.players.length());
