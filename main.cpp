@@ -30,9 +30,11 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
 int main(int argc, char** argv)
 {
     qInstallMessageHandler(myMessageOutput);
+    qDebug() << "Starting application";
     QCoreApplication::setOrganizationName("CodeCharm");
     QCoreApplication::setOrganizationDomain("codecharm.co.uk");
     QCoreApplication::setApplicationName("UTLauncher");
+
     
     UTLauncher app(argc, argv);
     

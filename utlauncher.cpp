@@ -8,9 +8,12 @@
 
 QtAwesome* awesome;
 
-UTLauncher::UTLauncher(int& argc, char** argv) : QApplication(argc, argv), settings(QSettings::IniFormat, QSettings::UserScope, "CodeCharm", "UTLauncher"), bootstrap(torrentDownloader, settings) {
+UTLauncher::UTLauncher(int& argc, char** argv) : QApplication(argc, argv), settings(QSettings::IniFormat, QSettings::UserScope, "CodeCharm", "UTLauncher"), bootstrap(settings) {
     QPixmap pixmap(":/splash.jpg");
     splash = new UTSplash(pixmap);
+    
+    qDebug() << "Starting launcher";
+
     
     awesome = new QtAwesome(qApp);
     awesome->initFontAwesome();
@@ -58,9 +61,17 @@ void UTLauncher::prepareConfig()
     startServerBrowser();
 }
 
+void UTLauncher::closeSplash()
+{
+    if(splash) {
+        splash->deleteLater();
+        splash = nullptr;
+    }
+}
+
 void UTLauncher::startServerBrowser()
 {
-    splash->deleteLater();
+    splashTimer.singleShot(2000, this, SLOT(closeSplash()));
     browser->show();
     browser->setMOTD(bootstrap.MOTD());
     

@@ -44,7 +44,7 @@ class ServerEntry : public QObject {
     int maxPlayerCount = 0;
     int queryPort = 8890;
     int playerCount = 0;
-    int ping= 999;
+    int ping = 999;
     
     QTcpSocket* socket = nullptr;
     QByteArray lastQuery;
@@ -54,12 +54,14 @@ class ServerEntry : public QObject {
     QList<int> pingResults;
     
     QTimer queryTimer;
+    QTime lastQueryTime;
+    
     
     struct Player {
         QString name;
         int score;
         bool operator<(const Player &other) const {
-            return score<other.score;
+            return other.score < score;
     }
     };
     QList<Player> players;
@@ -74,6 +76,7 @@ private slots:
     void onError(QAbstractSocket::SocketError socketError) {
         queryTimer.stop();
         queryTimer.singleShot(5000, this, SLOT(query()));
+        ping = 999;
     }
 public slots:
     void query() {
@@ -130,6 +133,7 @@ public slots:
                     ping = sum /= pingResults.size();
                     qDebug() << "Ping" << ping;
                     
+                    lastQueryTime = QTime::currentTime();
                     emit queryDone(id);
                     queryTimer.singleShot(10000 + qrand() % 10000, this, SLOT(query()));
                 }
@@ -379,9 +383,11 @@ public:
             for(auto player: players) {
                 auto item = new QTableWidgetItem(player.name);
                 item->setTextAlignment(Qt::AlignCenter);
+                item->setFlags(item->flags() ^ (Qt::ItemIsEditable));
                 playerListWidget->setItem(row, 0, item);
                 item = new QTableWidgetItem(QString::number(player.score));
                 item->setTextAlignment(Qt::AlignCenter);
+                item->setFlags(item->flags() ^ (Qt::ItemIsEditable));
                 playerListWidget->setItem(row++, 1, item);
             }
         };
@@ -492,6 +498,10 @@ public:
             layout->addWidget(labelWidget);
             playerListWidget = new QTableWidget(this);
             playerListWidget->setColumnCount(2);
+            
+            playerListWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+            playerListWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+            playerListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
             playerListWidget->horizontalHeader()->setStretchLastSection(true);
             playerListWidget->horizontalHeader()->setSectionResizeMode( 0, QHeaderView::Stretch);
             playerListWidget->horizontalHeader()->setSectionResizeMode( 1, QHeaderView::Fixed);

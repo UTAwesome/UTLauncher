@@ -15,10 +15,11 @@ find_package(Qt5Network)
 find_package(PkgConfig)
 find_package(Boost COMPONENTS system REQUIRED)
 
-pkg_check_modules(LIBTORRENT libtorrent-rasterbar)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-string (REPLACE ";" " " LIBTORRENT_CFLAGS_STR "${LIBTORRENT_CFLAGS} -DBOOST_THREAD_USE_LIB")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ${LIBTORRENT_CFLAGS_STR}")
+#pkg_check_modules(LIBTORRENT libtorrent-rasterbar)
+#string (REPLACE ";" " " LIBTORRENT_CFLAGS_STR "${LIBTORRENT_CFLAGS} -DBOOST_THREAD_USE_LIB")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LIBTORRENT_CFLAGS_STR}")
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
 add_definitions(-DQT_NO_DEBUG_OUTPUT)
@@ -33,17 +34,21 @@ if(CMAKE_SYSTEM_NAME MATCHES Windows)
 add_win32_resource(rc_srcs application.rc)
 endif(CMAKE_SYSTEM_NAME MATCHES Windows)
 
-add_executable(UTLauncher WIN32 ${resources} ${rc_srcs} main.cpp utlauncher.cpp download.cpp torrentdownloader.cpp utsplash.cpp bootstrap.cpp serverbrowser.cpp configdialog.cpp $<TARGET_OBJECTS:QtAwesome>)
+if(CMAKE_SYSTEM_NAME MATCHES Windows AND CMAKE_BUILD_TYPE MATCHES Release)
+	set(BUILD_TYPE WIN32)
+else()
+	set(BUILD_TYPE "")
+endif()
+
+add_executable(UTLauncher ${BUILD_TYPE} ${resources} ${rc_srcs} main.cpp utlauncher.cpp download.cpp utsplash.cpp bootstrap.cpp serverbrowser.cpp configdialog.cpp $<TARGET_OBJECTS:QtAwesome>)
 
 add_definitions(-DNO_DOWNLOAD)
-
-#z harfbuzz opengl32 jpeg png pcre16 sicuuc glib-2.0 sicudt intl iconv ws2_32 winmm imm32 freetype bz2 ssl crypto
 
 if(STATIC_BUILD_WIN32)
 	pkg_check_modules(QT5WIDGETS Qt5Widgets)
 	add_definitions(-DSTATIC_PLUGIN_WINDOWS)
-	target_link_libraries(UTLauncher Qt5::Widgets Qt5::QWindowsIntegrationPlugin Qt5::Network ${LIBTORRENT_LIBRARIES} ${QT5WIDGETS_LDFLAGS})
+	target_link_libraries(UTLauncher Qt5::Widgets Qt5::QWindowsIntegrationPlugin Qt5::Network ${QT5WIDGETS_LDFLAGS})
 else()
-	target_link_libraries(UTLauncher Qt5::Widgets Qt5::Network ${LIBTORRENT_LIBRARIES} ${Boost_SYSTEM_LIBRARY})
+	target_link_libraries(UTLauncher Qt5::Widgets Qt5::Network ${Boost_SYSTEM_LIBRARY})
 endif()
-message(STATUS ${STATIC_BUILD_WIN32_LIBRARIES})
+

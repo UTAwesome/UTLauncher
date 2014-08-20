@@ -23,7 +23,7 @@ class Bootstrap : public QObject {
     QFile torrentFile;
     QString motd;
     
-    TorrentDownloader& torrentDownloader;
+    //TorrentDownloader& torrentDownloader;
     QProcess unpackProcess;
     QString downloadedPath;
     QString releasePath;
@@ -54,7 +54,7 @@ public:
         return motd;
     }
     
-    Bootstrap(TorrentDownloader& torrentClient, QSettings& _settings, QObject* parent = nullptr) : QObject(parent), torrentDownloader(torrentClient), settings(_settings) {
+    Bootstrap(QSettings& _settings, QObject* parent = nullptr) : QObject(parent), settings(_settings) {
         download.setTarget("https://utlauncher.rushbase.net/bootstrap.json");
 
         connect(&download, &Download::done, [=](QByteArray a) {
@@ -74,7 +74,7 @@ public:
             emit ready();
             return;
 #endif
-            
+/*            
             QString filename =  QFileInfo(url).fileName();
             download2.setTarget(url);
             auto settingsDir =  QFileInfo(this->settings.fileName()).dir();
@@ -116,27 +116,27 @@ public:
                 torrentDownloader.download(torrentFullFile, torrentDownloadDir);
             });
             download2.download();
-            
+            */
         });
 
-        connect(&torrentDownloader, &TorrentDownloader::progress, [&](double progress) {
-            emit message(QString("Downloading latest UT build... %1").arg(QString::number(progress, 'f', 2)));
-        });
-        connect(&torrentDownloader, &TorrentDownloader::finished,  [=]() {
-            emit message(QString("Preparing the build..."));
-#ifdef __WIN32__
-            auto unrar = QFileInfo(this->settings.fileName()).dir().absolutePath() + "/unrar.exe";
-#else
-            auto unrar = "unrar";
-#endif
-            
-            unpackProcess.start(unrar, QStringList() << "x" << "-y" << downloadedPath << releasePath );
-            connect(&unpackProcess, &QProcess::started, [=]() {
-                
-            });
-            
-            connect(&unpackProcess, SIGNAL(finished(int)), this, SLOT(unpackFinished(int)));
-        });
+//         connect(&torrentDownloader, &TorrentDownloader::progress, [&](double progress) {
+//             emit message(QString("Downloading latest UT build... %1").arg(QString::number(progress, 'f', 2)));
+//         });
+//         connect(&torrentDownloader, &TorrentDownloader::finished,  [=]() {
+//             emit message(QString("Preparing the build..."));
+// #ifdef __WIN32__
+//             auto unrar = QFileInfo(this->settings.fileName()).dir().absolutePath() + "/unrar.exe";
+// #else
+//             auto unrar = "unrar";
+// #endif
+//             
+//             unpackProcess.start(unrar, QStringList() << "x" << "-y" << downloadedPath << releasePath );
+//             connect(&unpackProcess, &QProcess::started, [=]() {
+//                 
+//             });
+//             
+//             connect(&unpackProcess, SIGNAL(finished(int)), this, SLOT(unpackFinished(int)));
+//         });
         
         connect(&downloadServers, &Download::done, [=](QByteArray a) {
             emit serversInfo(QJsonDocument::fromJson(a));

@@ -33,15 +33,17 @@ class UTLauncher: public QApplication
     QWidget a;        
     UTSplash* splash;
     ServerBrowser* browser;
-    TorrentDownloader torrentDownloader;
+    //TorrentDownloader torrentDownloader;
     Bootstrap bootstrap;
     QSettings settings;
     QTimer serversRefreshTimer;
-        
+    QTimer splashTimer;
+    
     void prepareConfig();
     
     void startServerBrowser();
 private slots:
+    void closeSplash();
     void gotServersInfo(QJsonDocument document);
 public:    
     UTLauncher(int& argc, char** argv);
