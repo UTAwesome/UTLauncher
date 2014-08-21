@@ -9,16 +9,20 @@
 QtAwesome* awesome;
 
 QColor UTLauncher::iconColor() const {
-    QWidget w;
-    return w.palette().color(w.foregroundRole());
+    if(getenv("ICON_COLOR")) {
+        return QColor(getenv("ICON_COLOR"));
+    } else {
+        QWidget w;
+        return w.palette().color(w.foregroundRole());
+    }
 }
 
-UTLauncher::UTLauncher(int& argc, char** argv) : QApplication(argc, argv), settings(QSettings::IniFormat, QSettings::UserScope, "CodeCharm", "UTLauncher"), bootstrap(settings) {
+UTLauncher::UTLauncher(int& argc, char** argv) :
+            QApplication(argc, argv),
+            settings(QSettings::IniFormat, QSettings::UserScope, "CodeCharm", "UTLauncher"),
+            bootstrap(settings), systemTray(QIcon(":/icon.png")) {
     QPixmap pixmap(":/splash.jpg");
     splash = new UTSplash(pixmap);
-    
-    qDebug() << "Starting launcher";
-
     
     awesome = new QtAwesome(qApp);
     awesome->initFontAwesome();
@@ -27,7 +31,6 @@ UTLauncher::UTLauncher(int& argc, char** argv) : QApplication(argc, argv), setti
     awesome->setDefaultOption( "color-active" , iconColor() );
     awesome->setDefaultOption( "color-selected" , iconColor() );
     
-    
     splash->setGeometry(
         QStyle::alignedRect(
             Qt::LeftToRight,
@@ -35,7 +38,6 @@ UTLauncher::UTLauncher(int& argc, char** argv) : QApplication(argc, argv), setti
             splash->size(),
             qApp->desktop()->availableGeometry()
         ));
-    
     
     settings.setValue("FirstRun", false);
     
@@ -52,7 +54,10 @@ UTLauncher::UTLauncher(int& argc, char** argv) : QApplication(argc, argv), setti
     connect(&bootstrap, &Bootstrap::serversInfo, this, &UTLauncher::gotServersInfo, Qt::QueuedConnection );
     
     splash->showMessage("Getting version information...");
-    splash->show();
+    
+    if(!settings.value("StartMinimized", false).toBool()) {
+        splash->show();
+    }
 }
 
 void UTLauncher::gotServersInfo(QJsonDocument document)
@@ -77,7 +82,12 @@ void UTLauncher::closeSplash()
 void UTLauncher::startServerBrowser()
 {
     splashTimer.singleShot(2000, this, SLOT(closeSplash()));
-    browser->show();
+
+    if(!settings.value("StartMinimized", false).toBool()) {
+        browser->show();
+    } else {
+        qApp->setQuitOnLastWindowClosed(false); // workaround for app not starting
+    }
     browser->setMOTD(bootstrap.MOTD());
     
     auto hasEditorSupport = [=] {
@@ -90,6 +100,8 @@ void UTLauncher::startServerBrowser()
         ConfigDialog dialog(settings, mandatoryEditor);
         dialog.exec();
         browser->setEditorSupport(hasEditorSupport());
+        
+        browser->setHideOnClose(settings.value("MinimizeToTrayOnClose").toBool());
     };
     
     connect(browser, &ServerBrowser::openServer, [=](QString url, bool spectate, bool inEditor) {
@@ -121,4 +133,71 @@ void UTLauncher::startServerBrowser()
     connect(browser, &ServerBrowser::openSettings, openSettings);
     
     browser->setEditorSupport(hasEditorSupport());
+    
+    browser->setHideOnClose(settings.value("MinimizeToTrayOnClose", false).toBool());
+    
+    systemTray.setToolTip("UTLauncher");
+    auto systemTrayMenu = new QMenu(browser);
+    
+    auto showBrowser = new QAction(awesome->icon(fa::listalt), "Server List", this);
+    connect(showBrowser, &QAction::triggered, [=]() {
+        browser->showNormal();
+        browser->raise();
+        browser->activateWindow();
+    });
+    
+    auto runUTAction = new QAction(awesome->icon( fa::gamepad ),"Run UT", this);
+    connect(runUTAction, &QAction::triggered, [=]() {
+        QString exePath = bootstrap.programExePath();
+        if(!exePath.length()) {
+            browser->show();
+            openSettings();
+            return;
+        }
+        QProcess::startDetached(exePath);
+    });
+
+    auto runEditorAction = new QAction(awesome->icon( fa::code ),"Run Editor", this);
+    connect(runEditorAction, &QAction::triggered, [=]() {
+        QString editorPath = bootstrap.editorExePath();
+        QString projectPath = bootstrap.projectPath();
+        QProcess::startDetached(editorPath, QStringList() << projectPath);
+    });
+    
+
+    auto quitAction = new QAction(awesome->icon( fa::signout ),"Quit", this);
+    connect(quitAction, &QAction::triggered, [=]() {
+        QApplication::quit();
+    });
+    
+    systemTrayMenu->addAction(showBrowser);
+    systemTrayMenu->addSeparator();
+    systemTrayMenu->addAction(runUTAction);
+    systemTrayMenu->addAction(runEditorAction);
+    systemTrayMenu->addSeparator();
+    systemTrayMenu->addAction(quitAction);
+    
+    systemTray.setContextMenu(systemTrayMenu);
+    systemTray.show();
+    
+    connect(&systemTray, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason) {
+        qApp->setQuitOnLastWindowClosed(true);
+        
+        runEditorAction->setVisible(hasEditorSupport());
+        
+        switch(reason) {
+            
+            case QSystemTrayIcon::Trigger:
+            {
+                if(browser->isHidden()) {
+                    browser->show();
+                } else {
+                    browser->hide();
+                }
+                break;
+            }
+
+        }
+    });
+    
 }

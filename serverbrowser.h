@@ -361,6 +361,7 @@ public:
 };
 
 #include <QDesktopWidget>
+#include <QCloseEvent>
 
 class ServerBrowser : public QMainWindow
 {
@@ -375,13 +376,23 @@ class ServerBrowser : public QMainWindow
     QLabel* statusLabel;
     QAction* playAction;
     QAction* spectateAction;
-        
-public:
     
-    void setMotd() {
-        
+    bool m_hideOnClose = false;
+    
+protected:
+    void closeEvent(QCloseEvent* event) {
+        if(m_hideOnClose) {
+            event->ignore();
+            this->hide();
+            return;
+        }
+        QMainWindow::closeEvent(event);
     }
     
+public:
+    void setHideOnClose(bool status) {
+        m_hideOnClose = status;
+    }
     
     void loadFromJson(QJsonObject object) {
         model->loadFromJson(object);

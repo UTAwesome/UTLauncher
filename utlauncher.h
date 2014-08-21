@@ -38,6 +38,7 @@ class UTLauncher: public QApplication
     QSettings settings;
     QTimer serversRefreshTimer;
     QTimer splashTimer;
+    QSystemTrayIcon systemTray;
     
     void prepareConfig();
     

@@ -34,10 +34,6 @@ int main(int argc, char** argv)
 //    QApplication::setDesktopSettingsAware(false);
     UTLauncher app(argc, argv);
     
-    
-    QSystemTrayIcon icon(QIcon(":/icon.png"));
-    icon.show();
-    
     return app.exec();
 }
 

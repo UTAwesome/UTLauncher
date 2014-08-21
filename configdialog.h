@@ -146,6 +146,60 @@ class LocationsPage : public QWidget
     }
 };
 
+#include <QCheckBox>
+
+class UIPage : public QWidget
+{
+    Q_OBJECT
+    public:
+    UIPage(QSettings& settings, QWidget* parent = nullptr) {
+        auto appearance = new QGroupBox("Appearance");
+        {
+
+        }
+        
+        auto behaviour = new QGroupBox("Behaviour");
+        {
+            auto layout = new QVBoxLayout;
+            
+            auto checkbox = new QCheckBox("Minimize to tray on close", this);
+            checkbox->setChecked(settings.value("MinimizeToTrayOnClose", false).toBool());
+            connect(checkbox, &QCheckBox::toggled, [&](bool status) {
+                settings.setValue("MinimizeToTrayOnClose", status);
+            });
+            
+            layout->addWidget(checkbox);
+
+            checkbox = new QCheckBox("Start minimized", this);
+            checkbox->setChecked(settings.value("StartMinimized", false).toBool());
+            connect(checkbox, &QCheckBox::toggled, [&](bool status) {
+                settings.setValue("StartMinimized", status);
+            });
+            
+            layout->addWidget(checkbox);
+            
+            behaviour->setLayout(layout);
+
+//             auto widget = new QWidget(this);
+//             
+//             auto layout = new QHorizontalLayout(this);            
+//             layout->addWidget(checkbox);
+//             
+//             widget->setLayout(layout);
+//             appearance->addWidget(widget);
+            
+            
+        }
+                
+        auto mainLayout = new QVBoxLayout;
+        //mainLayout->addWidget(appearance);
+        mainLayout->addWidget(behaviour);
+        setLayout(mainLayout);
+        
+    }
+};
+
+
 #include <QApplication>
 
 class ConfigDialog : public QDialog
@@ -154,6 +208,7 @@ class ConfigDialog : public QDialog
     
     QListWidget* contentsWidget;
     QStackedWidget* pagesWidget;
+    QMap<QListWidgetItem*, int> buttonMap;
 public:
     ConfigDialog(QSettings& settings, bool mandatoryEditor) {
         contentsWidget = new QListWidget;
@@ -163,6 +218,7 @@ public:
         contentsWidget->setMaximumWidth(100);
         contentsWidget->setSpacing(10);
         contentsWidget->setFlow(QListView::TopToBottom);
+        contentsWidget->setUniformItemSizes(true);
 
         auto f = qApp->font();
         QFontMetrics fm(f);
@@ -171,6 +227,8 @@ public:
         
         pagesWidget = new QStackedWidget;
         pagesWidget->addWidget(new LocationsPage(settings, mandatoryEditor));
+        
+        pagesWidget->addWidget(new UIPage(settings));
         
         auto closeButton = new QPushButton("Close");
         
@@ -204,11 +262,21 @@ public:
     }
     void createIcons()
     {
-        QListWidgetItem *configButton = new QListWidgetItem(contentsWidget);
-        configButton->setIcon(awesome->icon(fa::cubes));
-        configButton->setText(tr("Locations"));
-        configButton->setTextAlignment(Qt::AlignHCenter);
-        configButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        auto locationsButton = new QListWidgetItem(contentsWidget);
+        locationsButton->setIcon(awesome->icon(fa::cubes));
+        locationsButton->setText(tr("Locations"));
+        locationsButton->setTextAlignment(Qt::AlignHCenter);
+        locationsButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        locationsButton->setSizeHint(QSize(80, 64));
+        buttonMap[locationsButton] = 0;
+        
+        auto uiButton = new QListWidgetItem(contentsWidget);
+        uiButton->setIcon(awesome->icon(fa::desktop));
+        uiButton->setText(tr("UI"));
+        uiButton->setTextAlignment(Qt::AlignHCenter);
+        uiButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        uiButton->setSizeHint(QSize(80, 64));
+        buttonMap[uiButton] = 1;
         
 
         connect(contentsWidget,
@@ -218,7 +286,9 @@ public:
     
 public slots:
     void changePage(QListWidgetItem* current, QListWidgetItem* previous) {
+        pagesWidget->setCurrentIndex(buttonMap[current]);
     }
+
 };
 
 #endif // CONFIGDIALOG_H
