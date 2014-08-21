@@ -30,6 +30,8 @@ enum class Column {
     MaxColumn
 };
 
+#define MAX_PING 1999
+
 class ServerEntry : public QObject {
     Q_OBJECT
     public:
@@ -44,7 +46,9 @@ class ServerEntry : public QObject {
     int maxPlayerCount = 0;
     int queryPort = 8890;
     int playerCount = 0;
-    int ping = 999;
+    int ping = MAX_PING;
+    
+    float avgPing = MAX_PING;
     
     QTcpSocket* socket = nullptr;
     QByteArray lastQuery;
@@ -76,7 +80,8 @@ private slots:
     void onError(QAbstractSocket::SocketError socketError) {
         queryTimer.stop();
         queryTimer.singleShot(5000, this, SLOT(query()));
-        ping = 999;
+        ping = MAX_PING;
+        avgPing = MAX_PING;
     }
 public slots:
     void query() {
@@ -131,6 +136,12 @@ public slots:
                         sum += p;
                     }
                     ping = sum /= pingResults.size();
+                    
+                    if(avgPing > MAX_PING - 10) {
+                        avgPing = ping;
+                    } else {
+                        avgPing = (9*avgPing + ping)/10;
+                    }
                     qDebug() << "Ping" << ping;
                     
                     lastQueryTime = QTime::currentTime();
@@ -169,7 +180,7 @@ public:
     int playerCount() {
         int count = 0;
         for(auto server: servers) {
-            if(server->ping != 999) {
+            if(server->ping != MAX_PING) {
                 count += server->playerCount;
             }
         }
@@ -179,7 +190,7 @@ public:
     int serverCount() {
         int count = 0;
         for(auto server: servers) {
-            if(server->ping != 999)
+            if(server->ping != MAX_PING)
                 count++;
         }
         return count;
@@ -325,14 +336,24 @@ public:
     }
  protected:
      bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const {
+        
+        auto& entry = model->entryById(sourceRow);
+        if(entry.ping == MAX_PING)
+            return false;
+
          QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
      }
      bool lessThan(const QModelIndex &left, const QModelIndex &right) const {
          if(left.column() == (int)Column::Country && right.column() == (int)Column::Country) {
-             qDebug() << left << right;
              auto& leftEntry = model->entryById(left.row());
              auto& rightEntry = model->entryById(right.row());
              return QString::compare(leftEntry.countryCode, rightEntry.countryCode) < 0;
+         }
+         if(left.column() == (int)Column::Ping && right.column() == (int)Column::Ping) {
+             auto& leftEntry = model->entryById(left.row());
+             auto& rightEntry = model->entryById(right.row());
+             
+             return leftEntry.avgPing < rightEntry.avgPing;
          }
          
          QSortFilterProxyModel::lessThan(left, right);
@@ -596,7 +617,8 @@ public:
 
         
         proxyModel.setFilterKeyColumn((int)Column::Ping);
-        proxyModel.setFilterRegExp("^(?!999$)\\d+");
+        #define STRINGIFY(s) #s
+        proxyModel.setFilterRegExp("^(?!" STRINGIFY(MAX_PING) "$)\\d+");
         
         table->sortByColumn((int)Column::Ping, Qt::AscendingOrder);
 

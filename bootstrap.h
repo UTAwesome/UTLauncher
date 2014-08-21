@@ -71,9 +71,10 @@ public:
                 auto latestMinor = rx.cap(2).toInt();
                 auto latestPatch = rx.cap(3).toInt();
                 
-                if(latestMajor != VERSION_MAJOR ||
-                    latestMinor != VERSION_MINOR ||
-                    latestPatch != VERSION_PATCH) {
+                int numLatest = 1000 * latestMajor + 100*latestMinor + latestPatch;
+                int numCurrent = 1000 * VERSION_MAJOR + 100*VERSION_MINOR + VERSION_PATCH;
+                
+                if(numLatest > numCurrent) {
                     QMessageBox::information(NULL, "Newer version is available", QString("Current version: %1.%2.%3<br>Latest version: %4 %5 %6<br><br>").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_PATCH).arg(latestMajor).arg(latestMinor).arg(latestPatch) + json.value("downloadMessage").toString());
                 }
             }
