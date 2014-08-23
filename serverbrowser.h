@@ -17,6 +17,10 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QItemSelectionModel>
+#include <QProxyStyle>
+
+
+#include <QDockWidget>
 
 #include "awesome.h"
 
@@ -360,6 +364,39 @@ public:
      }
 };
 
+class iconned_dock_style: public QProxyStyle{
+    Q_OBJECT
+    QIcon icon_;
+public:
+    iconned_dock_style(const QIcon& icon,  QStyle* style = 0)
+        : QProxyStyle(style)
+        , icon_(icon)
+    {}
+
+    virtual ~iconned_dock_style()
+    {}
+
+    virtual void drawControl(ControlElement element, const QStyleOption* option,
+        QPainter* painter, const QWidget* widget = 0) const
+    {
+        if(element == QStyle::CE_DockWidgetTitle)
+        {
+            //width of the icon
+            int width = pixelMetric(QStyle::PM_ToolBarIconSize);
+            //margin of title from frame
+            int margin = baseStyle()->pixelMetric(QStyle::PM_DockWidgetTitleMargin);
+
+            QPoint icon_point(margin + option->rect.left(), margin + option->rect.center().y() - width/2);
+
+            painter->drawPixmap(icon_point, icon_.pixmap(width, width));
+
+            const_cast<QStyleOption*>(option)->rect = option->rect.adjusted(width, 0, 0, 0);
+        }
+        baseStyle()->drawControl(element, option, painter, widget);
+    }
+};
+
+
 #include <QDesktopWidget>
 #include <QCloseEvent>
 
@@ -374,6 +411,9 @@ class ServerBrowser : public QMainWindow
     QTableWidget* playerListWidget;
     QLabel* motdLabel;
     QLabel* statusLabel;
+    
+    QToolBar* buttonsToolbar;
+    QAction* settingsAction;
     QAction* playAction;
     QAction* spectateAction;
     
@@ -403,7 +443,7 @@ public:
     
     ServerBrowser(QWidget* parent = nullptr) : model(new ServerListModel(this)), proxyModel(model, this), QMainWindow(parent) {
         table = new QTableView(this);
-          
+        
         setMinimumSize(QSize(1000, 580));
         
         setWindowIcon(QIcon(":/icon.png"));
@@ -462,8 +502,9 @@ public:
         
         proxyModel.setSourceModel(model);
         
+        
         {
-            auto toolbar = new QToolBar("Actions", this);
+            auto toolbar = buttonsToolbar = new QToolBar("Actions", this);
             toolbar->setToolButtonStyle( Qt::ToolButtonTextUnderIcon );
             
             // toolbar->setToolButtonStyle( Qt::ToolButtonFollowStyle );
@@ -495,9 +536,10 @@ public:
                     emit openServer(entry.host + ":" + QString::number(entry.port), true);
                 });
             }
+            
             toolbar->addSeparator();
             {
-                auto settingsAction = new QAction(awesome->icon(fa::cogs, {
+                settingsAction = new QAction(awesome->icon(fa::cogs, {
                     {"scale-factor", 0.8}
                 }), "Settings", this);
                 
@@ -506,38 +548,44 @@ public:
                 });
                 toolbar->addAction(settingsAction);
             }
+            
             addToolBar(Qt::LeftToolBarArea, toolbar);
         }
         {
-            auto toolbar = new QToolBar("Currently playing", this);
+            auto dockWidget = new QDockWidget("Currently playing", this);
+            dockWidget->setStyle(new iconned_dock_style(awesome->icon(fa::user, {
+                    {"scale-factor", 0.6}
+                }), dockWidget->style() ));
+            
+            //auto toolbar = new QToolBar("Currently playing", this);
             
             auto widget = new QWidget(this);
             auto layout = new QVBoxLayout;
             
-            auto labelWidget = new QWidget(this);
-            {
-                auto label = new QLabel(this);
-                
-                int dpiX = qApp->desktop()->logicalDpiX();
-                float dpiScale = (float)dpiX / 96;
-                label->setPixmap(awesome->icon(fa::users, {
-                    {"scale-factor", 0.8}
-                }).pixmap(dpiScale*32, dpiScale*32));
-                
-                                
-                auto layout = new QHBoxLayout;
-                labelWidget->setLayout(layout);
-                layout->addWidget(label);
-                label->setFixedWidth(32*dpiScale + 16);
-                label->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
-                label = new QLabel("Currently playing", this);
-                label->setAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
-
-                layout->addWidget(label);
-                layout->setContentsMargins(QMargins(0, 0, 0, 0));
-//                layout->setSpacing(16);
-            }
-            layout->addWidget(labelWidget);
+//             auto labelWidget = new QWidget(this);
+//             {
+//                 auto label = new QLabel(this);
+//                 
+//                 int dpiX = qApp->desktop()->logicalDpiX();
+//                 float dpiScale = (float)dpiX / 96;
+//                 label->setPixmap(awesome->icon(fa::users, {
+//                     {"scale-factor", 0.8}
+//                 }).pixmap(dpiScale*32, dpiScale*32));
+//                 
+//                                 
+//                 auto layout = new QHBoxLayout;
+//                 labelWidget->setLayout(layout);
+//                 layout->addWidget(label);
+//                 label->setFixedWidth(32*dpiScale + 16);
+//                 label->setAlignment(Qt::AlignRight|Qt::AlignVCenter);
+//                 label = new QLabel("Currently playing", this);
+//                 label->setAlignment(Qt::AlignHCenter|Qt::AlignVCenter);
+// 
+//                 layout->addWidget(label);
+//                 layout->setContentsMargins(QMargins(0, 0, 0, 0));
+// //                layout->setSpacing(16);
+//             }
+            //layout->addWidget(labelWidget);
             playerListWidget = new QTableWidget(this);
             playerListWidget->setColumnCount(2);
             
@@ -554,12 +602,15 @@ public:
             
             widget->setLayout(layout);
             
-            toolbar->addWidget(widget);
+            
             layout->setContentsMargins(QMargins(0, 0, 0, 0));
             layout->setSpacing(0);
             //toolbar->setLayoutDirection(Qt::Vertical);
             
-            addToolBar(Qt::RightToolBarArea, toolbar);
+            //toolbar->addWidget(widget);
+            dockWidget->setWidget(widget);
+            addDockWidget(Qt::RightDockWidgetArea, dockWidget);
+            //addToolBar(Qt::RightToolBarArea, toolbar);
         }
         
         table->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -656,6 +707,20 @@ public:
     }
     bool editorSupport() const {
         return m_editorSupport;
+    }
+    
+    void showEvent(QShowEvent* show) {
+        // make sure all the buttons have uniform size
+        QList<QAction*> actions;
+        actions << playAction << spectateAction << settingsAction;
+        int maxWidth = 60;
+        for(QAction* action: actions) {
+            maxWidth = std::max(maxWidth, buttonsToolbar->widgetForAction(action)->width());
+        }
+        for(QAction* action: actions) {
+            buttonsToolbar->widgetForAction(action)->setMinimumWidth(maxWidth);
+        }
+        QMainWindow::showEvent(show);
     }
     
 public slots:

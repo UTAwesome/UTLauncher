@@ -25,6 +25,17 @@ void Download::downloadFinished(QNetworkReply *data) {
 void Download::download() {
     QUrl url = QUrl::fromEncoded(this->target.toLocal8Bit());
     QNetworkRequest request(url);
+    request.setRawHeader( "User-Agent" , QString("UTLauncher %1.%2.%3 / %4").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_PATCH).arg(
+#if defined Q_OS_WINDOWS
+		"Windows"
+#elif defined Q_OS_LINUX
+		"Linux"
+#elif defined Q_OS_MAX
+		"MacOSX"
+#else
+		"Unknown"
+#endif
+		).toUtf8() );
     QNetworkReply* reply = manager.get(request);
     QObject::connect(reply, SIGNAL(downloadProgress(qint64,qint64)), this, SLOT(downloadProgress(qint64,qint64)));
     if(receivers(SIGNAL(chunk(QByteArray)))) {

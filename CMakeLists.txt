@@ -56,3 +56,4 @@ else()
 	target_link_libraries(UTLauncher Qt5::Widgets Qt5::Network ${Boost_SYSTEM_LIBRARY})
 endif()
 
+install(TARGETS UTLauncher RUNTIME DESTINATION bin)
