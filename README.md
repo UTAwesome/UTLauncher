@@ -25,7 +25,7 @@ pacman -U utlauncher-git*.pkg.tar.xz
 
 You need to install Qt5 base development package. In openSUSE it is "libqt5-qtbase-devel".
 ```
-git clone git@github.com:CodeCharmLtd/UTLauncher.git
+git clone https://github.com/CodeCharmLtd/UTLauncher.git
 mkdir UTLauncher/build
 cd UTLauncher
 git submodule update --init --recursive
