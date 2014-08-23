@@ -30,7 +30,7 @@ mkdir UTLauncher/build
 cd UTLauncher
 git submodule update --init --recursive
 cd build
-cmake ..
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make
 sudo make install
 ```
