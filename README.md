@@ -23,7 +23,10 @@ pacman -U utlauncher-git*.pkg.tar.xz
 
 ### Build instructions (Linux)
 
-You need to install Qt5 base development package. In openSUSE it is "libqt5-qtbase-devel".
+You need to install Qt5 base development package. In openSUSE it is `libqt5-qtbase-devel`.
+
+openSUSE + Qt5 repo mey be: `libQt5Gui-devel` `libQt5Network-devel` `libQt5Widgets-devel`
+
 ```
 git clone https://github.com/CodeCharmLtd/UTLauncher.git
 mkdir UTLauncher/build
