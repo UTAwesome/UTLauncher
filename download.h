@@ -28,6 +28,7 @@ signals:
 public slots:
     void download();
 private slots:
+    void downloadError(QNetworkReply::NetworkError code);
     void downloadFinished(QNetworkReply* data);
     void downloadProgress(qint64 recieved, qint64 total);
 };

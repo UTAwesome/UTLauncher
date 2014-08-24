@@ -4,6 +4,7 @@
 #include <QNetworkRequest>
 #include <QFile>
 #include <QDebug>
+#include <QNetworkReply>
 
 Download::Download() : QObject(0) {
     QObject::connect(&manager, SIGNAL(finished(QNetworkReply*)),this, SLOT(downloadFinished(QNetworkReply*)));
@@ -43,8 +44,13 @@ void Download::download() {
             emit chunk(reply->readAll());
         });
     }
+    QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(downloadError(QNetworkReply::NetworkError)));
 }
 
+
+void Download::downloadError(QNetworkReply::NetworkError error) {
+    qDebug() << "Got download error" << error;
+}
 
 void Download::downloadProgress(qint64 recieved, qint64 total) {
     qDebug() << recieved << total;
