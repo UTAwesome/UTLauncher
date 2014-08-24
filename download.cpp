@@ -26,6 +26,9 @@ void Download::downloadFinished(QNetworkReply *data) {
 void Download::download() {
     QUrl url = QUrl::fromEncoded(this->target.toLocal8Bit());
     QNetworkRequest request(url);
+    
+    request.sslConfiguration().setProtocol(QSsl::AnyProtocol);
+    
     request.setRawHeader( "User-Agent" , QString("UTLauncher %1.%2.%3 / %4").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_PATCH).arg(
 #if defined Q_OS_WINDOWS
 		"Windows"
@@ -45,8 +48,16 @@ void Download::download() {
         });
     }
     QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(downloadError(QNetworkReply::NetworkError)));
+    QObject::connect(reply, SIGNAL(sslErrors(QList<QSslError>)), SLOT(downloadSslError(QList<QSslError>)));
+    
 }
 
+
+void Download::downloadSslErrors(QList<QSslError> errors) {
+    for(auto error: errors) {
+        qDebug() << "SSL Error" << error;
+    }
+}
 
 void Download::downloadError(QNetworkReply::NetworkError error) {
     qDebug() << "Got download error" << error;

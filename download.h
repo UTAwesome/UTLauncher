@@ -5,7 +5,8 @@
 #include <QString>
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
-
+#include <QList>
+#include <QSslError>
 
 class Download : public QObject {
     Q_OBJECT
@@ -31,6 +32,7 @@ private slots:
     void downloadError(QNetworkReply::NetworkError code);
     void downloadFinished(QNetworkReply* data);
     void downloadProgress(qint64 recieved, qint64 total);
+    void downloadSslErrors(QList<QSslError> errors);
 };
 
 #endif // DOWNLOAD_H
