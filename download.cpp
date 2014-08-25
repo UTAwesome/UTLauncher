@@ -48,7 +48,7 @@ void Download::download() {
         });
     }
     QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(downloadError(QNetworkReply::NetworkError)));
-    QObject::connect(reply, SIGNAL(sslErrors(QList<QSslError>)), SLOT(downloadSslError(QList<QSslError>)));
+    QObject::connect(reply, SIGNAL(sslErrors(QList<QSslError>)), SLOT(downloadSslErrors(QList<QSslError>)));
     
 }
 
