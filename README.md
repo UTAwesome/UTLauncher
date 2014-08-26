@@ -37,6 +37,17 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 make
 sudo make install
 ```
+### Build instructions (Ubuntu)
+
+Install: `sudo apt-get install cmake qtbase5-dev`
+
+Switch to UTLauncher source folder and type:
+```
+mkdir UTLauncher
+cd UTLauncher
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make
+```
 
 ## License
 Licensed under the MIT license
