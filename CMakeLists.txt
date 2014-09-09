@@ -14,16 +14,17 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt5Widgets)
 find_package(Qt5Network)
 find_package(PkgConfig)
+find_package(ZLIB)
 #find_package(Boost COMPONENTS system REQUIRED)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 
 #pkg_check_modules(LIBTORRENT libtorrent-rasterbar)
 #string (REPLACE ";" " " LIBTORRENT_CFLAGS_STR "${LIBTORRENT_CFLAGS} -DBOOST_THREAD_USE_LIB")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LIBTORRENT_CFLAGS_STR}")
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
-add_definitions(-DQT_NO_DEBUG_OUTPUT)
+#add_definitions(-DQT_NO_DEBUG_OUTPUT)
 endif()
 
 add_subdirectory(3rdparty)
@@ -41,19 +42,19 @@ else()
 	set(BUILD_TYPE "")
 endif()
 
-set(UTLauncher_VERSION "0.2.6" CACHE STRING "Version number" FORCE INTERNAL)
+set(UTLauncher_VERSION "0.3.0" CACHE STRING "Version number" FORCE INTERNAL)
 set_version_number(UTLauncher)
 
 add_definitions(-DNO_DOWNLOAD -DVERSION_MAJOR=${UTLauncher_VERSION_MAJOR} -DVERSION_MINOR=${UTLauncher_VERSION_MINOR} -DVERSION_PATCH=${UTLauncher_VERSION_PATCH})
-add_executable(UTLauncher ${BUILD_TYPE} ${resources} ${rc_srcs} main.cpp utlauncher.cpp download.cpp utsplash.cpp bootstrap.cpp serverbrowser.cpp configdialog.cpp $<TARGET_OBJECTS:QtAwesome>)
+add_executable(UTLauncher ${BUILD_TYPE} ${resources} ${rc_srcs} main.cpp utlauncher.cpp download.cpp utsplash.cpp bootstrap.cpp serverbrowser.cpp configdialog.cpp $<TARGET_OBJECTS:QtAwesome> $<TARGET_OBJECTS:quazip>)
 
 
 if(STATIC_BUILD_WIN32)
 	pkg_check_modules(QT5WIDGETS Qt5Widgets)
 	add_definitions(-DSTATIC_PLUGIN_WINDOWS)
-	target_link_libraries(UTLauncher Qt5::Widgets Qt5::QWindowsIntegrationPlugin Qt5::Network ${QT5WIDGETS_LDFLAGS})
+	target_link_libraries(UTLauncher Qt5::Widgets Qt5::QWindowsIntegrationPlugin Qt5::Network ${QT5WIDGETS_LDFLAGS} ${ZLIB_LIBRARY})
 else()
-	target_link_libraries(UTLauncher Qt5::Widgets Qt5::Network ${Boost_SYSTEM_LIBRARY})
+	target_link_libraries(UTLauncher Qt5::Widgets Qt5::Network ${Boost_SYSTEM_LIBRARY} ${ZLIB_LIBRARY})
 endif()
 
 install(TARGETS UTLauncher RUNTIME DESTINATION bin)

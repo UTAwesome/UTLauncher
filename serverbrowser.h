@@ -74,7 +74,6 @@ class ServerEntry : public QObject {
     };
     QList<Player> players;
 public:
-
     
     QString address() const {
         return host + ":" + QString::number(port);
@@ -93,7 +92,6 @@ public slots:
             socket->deleteLater();
         }
         socket = new QTcpSocket(this);
-        qDebug() << host << queryPort;
         socket->connectToHost(host, queryPort);
             connect(socket, &QTcpSocket::stateChanged, [=](QAbstractSocket::SocketState state) {
                 toQuery = QList<QByteArray>() << "GameMode" << "Map" << "PlayerNum" << "PlayerList";
@@ -109,7 +107,6 @@ public slots:
             connect(socket, &QTcpSocket::readyRead, [=]() {
                 QString query = toQuery.takeFirst();
                 QString answer = QString(socket->readAll()).trimmed();
-                qDebug() << "Got answer" << answer;
                 if(query == "Map") {
                     map = answer;
                 } else if(query == "GameMode") {
@@ -146,11 +143,10 @@ public slots:
                     } else {
                         avgPing = (9*avgPing + ping)/10;
                     }
-                    qDebug() << "Ping" << ping;
                     
                     lastQueryTime = QTime::currentTime();
                     emit queryDone(id);
-                    queryTimer.singleShot(10000 + qrand() % 10000, this, SLOT(query()));
+                    queryTimer.singleShot(15000 + qrand() % 15000, this, SLOT(query()));
                 }
             });
     }
@@ -206,6 +202,13 @@ public:
         emit headerDataChanged(Qt::Horizontal, 0, (int)Column::MaxColumn-1);
     }
 
+    ServerEntry* serverEntryFromAddress(QString address) {
+        if(serverMap.contains(address)) {
+            return serverMap[address];
+        }
+        return nullptr;
+    }
+    
     void loadFromJson(QJsonObject object) {
         beginResetModel();
     
@@ -307,6 +310,14 @@ public:
         static QStringList headers = {
             "", "Count", "Gametype", "Map", "Server Name", "Ping"
         };
+        if(section == 0 && orientation == Qt::Horizontal) {
+            if(role == Qt::DecorationRole)
+                return awesome->icon(fa::flag);
+            if(role == Qt::TextAlignmentRole)
+                return Qt::AlignCenter;
+        }
+        
+        
         if(orientation == Qt::Horizontal && role == Qt::DisplayRole) {
             return headers[section];
         }
@@ -399,6 +410,9 @@ public:
 
 #include <QDesktopWidget>
 #include <QCloseEvent>
+#include <QDesktopServices>
+#include <QPushButton>
+#include <QToolButton>
 
 class ServerBrowser : public QMainWindow
 {
@@ -413,6 +427,8 @@ class ServerBrowser : public QMainWindow
     QLabel* statusLabel;
     
     QToolBar* buttonsToolbar;
+    
+    QToolBar* helpToolbar;
     QAction* settingsAction;
     QAction* playAction;
     QAction* spectateAction;
@@ -439,6 +455,10 @@ public:
     }
     void setMOTD(QString motd) {
         motdLabel->setText(motd);
+    }
+    
+    const ServerEntry* serverEntryFromAddress(QString address) {
+        return model->serverEntryFromAddress(address);
     }
     
     ServerBrowser(QWidget* parent = nullptr) : model(new ServerListModel(this)), proxyModel(model, this), QMainWindow(parent) {
@@ -550,6 +570,63 @@ public:
             }
             
             addToolBar(Qt::LeftToolBarArea, toolbar);
+            
+            
+            helpToolbar = new QToolBar("Links", this);
+            helpToolbar->setToolButtonStyle( Qt::ToolButtonTextBesideIcon );
+            
+            auto spacerWidget = new QWidget(this);
+            spacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+            spacerWidget->setVisible(true);
+            helpToolbar->addWidget(spacerWidget);
+            
+            {
+                auto font = helpToolbar->font();
+                font.setPointSizeF(font.pointSizeF()*0.8);
+                QFontMetrics metrics(font);
+                helpToolbar->setIconSize(QSize(metrics.height(), metrics.height()));
+                helpToolbar->setFont(font);
+                
+                
+                auto about = new QAction(awesome->icon(fa::handoup), "About", this);
+                connect(about, &QAction::triggered, [=] {
+                    QMessageBox::about(this, "UTLauncher", "Brought to you by Damian \"Rush\" Kaczmarek from <a href=\"https://codecharm.co.uk\">Code Charm Ltd</a><br><br>Servers delivered and hosted by raxxy and others. Server query code done by TimeH.<br><br>Big thanks to Epic Games for delivering us Unreal Tournament in open fashion!<br><br>Please visit <a href=\"https://forums.unrealtournament.com\">Unreal Tournament forums</a> to participate in development.");
+                });
+                
+                helpToolbar->addAction(about);
+                
+                auto needHelp = new QAction(awesome->icon(fa::questioncircle), "Help", this);
+                
+                
+                auto github = new QAction(awesome->icon(fa::github), "Github", this);
+                connect(github, &QAction::triggered, [=] {
+                    QDesktopServices::openUrl(QUrl("https://github.com/CodeCharmLtd/UTLauncher"));
+                });
+                
+                auto helpAction = new QAction(awesome->icon(fa::comments), "IRC Chat", this);
+                connect(helpAction, &QAction::triggered, [=] {
+                    QDesktopServices::openUrl(QUrl("http://webchat.globalgamers.net/?channels=beyondunreal"));
+                });
+                
+                
+                helpToolbar->addAction(needHelp);
+                auto needHelpWidget = (QToolButton*)helpToolbar->widgetForAction(needHelp);
+                
+                needHelpWidget->setPopupMode(QToolButton::InstantPopup);
+                needHelpWidget->setArrowType(Qt::NoArrow);
+                needHelpWidget->setStyleSheet("QToolButton::menu-indicator { image: none; }");
+                
+                
+                auto menu = new QMenu(this);
+                menu->addAction(github);
+                menu->addAction(helpAction);
+
+                needHelpWidget->setMenu(menu);
+            }
+            
+            
+            addToolBar(Qt::LeftToolBarArea, helpToolbar);
+            
         }
         {
             auto dockWidget = new QDockWidget("Currently playing", this);
@@ -592,6 +669,7 @@ public:
             playerListWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
             playerListWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
             playerListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+            
             playerListWidget->horizontalHeader()->setStretchLastSection(true);
             playerListWidget->horizontalHeader()->setSectionResizeMode( 0, QHeaderView::Stretch);
             playerListWidget->horizontalHeader()->setSectionResizeMode( 1, QHeaderView::Fixed);
@@ -660,6 +738,7 @@ public:
         table->setSortingEnabled(true);
         table->setSelectionMode(QAbstractItemView::SingleSelection);
         table->setModel(&proxyModel);
+        
         table->horizontalHeader()->setStretchLastSection(true);
         proxyModel.setDynamicSortFilter(true);
 
@@ -720,6 +799,15 @@ public:
         for(QAction* action: actions) {
             buttonsToolbar->widgetForAction(action)->setMinimumWidth(maxWidth);
         }
+        auto pos = helpToolbar->pos();
+        
+        
+        //buttonsToolbar->setSize(QSize());
+        
+        helpToolbar->move(pos.x(), pos.y() + 100);
+        
+        qDebug() << "help toolbar" << pos;
+        
         QMainWindow::showEvent(show);
     }
     

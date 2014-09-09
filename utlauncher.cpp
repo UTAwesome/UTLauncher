@@ -5,6 +5,7 @@
 #include <QStatusBar>
 
 #include "configdialog.h"
+#include <QProgressDialog>
 
 QtAwesome* awesome;
 
@@ -79,6 +80,10 @@ void UTLauncher::closeSplash()
     }
 }
 
+#include <3rdparty/quazip/quazip/quazip.h>
+#include <3rdparty/quazip/quazip/quazipfile.h>
+#include <QMessageBox>
+
 void UTLauncher::startServerBrowser()
 {
     splashTimer.singleShot(2000, this, SLOT(closeSplash()));
@@ -120,7 +125,138 @@ void UTLauncher::startServerBrowser()
                 openSettings();
                 return;
             }
-            QProcess::startDetached(exePath, QStringList() << (url + (spectate?"?SpectatorOnly=1":"")) );
+            const auto serverEntry = browser->serverEntryFromAddress(url);
+            auto launch = [=] {
+                qDebug() << "Launching!!\n";
+              QProcess::startDetached(exePath, QStringList() << (url + (spectate?"?SpectatorOnly=1":"")) );  
+            };
+                        
+            if(serverEntry) {
+                if(bootstrap.isStockMap(serverEntry->map)) {
+                    launch();
+                    return;
+                }
+                
+
+                QString exePath = bootstrap.programExePath();
+                QFileInfo exeInfo(exePath);
+                auto contentDir = QDir(exeInfo.dir());
+                contentDir.cdUp();
+                contentDir.cdUp();
+                contentDir.cd("Content");
+                auto zipFilePath = contentDir.absoluteFilePath(serverEntry->map + ".zip");
+                
+                if(QFile::exists(zipFilePath)) {
+                    launch();
+                    return;
+                }
+
+                Download mapDownload;
+                mapDownload.setTarget("https://ut.rushbase.net/customcontent/Data/" + serverEntry->map + ".zip");
+                QProgressDialog dialog("Downloading map: " + serverEntry->map, "Cancel", 0, 100);
+                
+                QFile zipFile(zipFilePath);
+                zipFile.open(QIODevice::WriteOnly);
+                
+                int httpCode = 200;
+                connect(&mapDownload, &Download::error, [&](int code) {
+                    httpCode = code;
+                    if(code != 200) {
+                        zipFile.remove();
+                        QMessageBox::critical(nullptr, "Unable to download map", QString("Got code %1 while trying to download map:<br>%2").arg(code).arg(serverEntry->map));
+                    }
+                });
+                
+                connect(&mapDownload, &Download::chunk, [&](QByteArray chunk) {
+                    qDebug() << "Reading!\n";
+                    zipFile.write(chunk);
+                });
+                connect(&mapDownload, &Download::progress, [&](double progress) {
+                    dialog.setValue(100*progress);
+                    if(progress == 1.0) {
+                        dialog.accept();
+                    }
+                });
+                
+                
+                mapDownload.download();
+                qDebug() << "Downloading map " << serverEntry->map;
+                if(!dialog.exec() || httpCode != 200) {
+                    zipFile.remove(); // remove unfinished download
+                    return;
+                }
+                zipFile.close();
+                
+                QProgressDialog installDialog("Installing map: " + serverEntry->map, "", 0, 100);
+                installDialog.setWindowModality(Qt::ApplicationModal);
+                installDialog.show();
+                installDialog.setValue(0);
+                
+                qDebug() << "Installed!!\n";
+                QuaZip zip(zipFilePath);
+                
+                auto textCodec = QTextCodec::codecForName("TSCII");
+                zip.setFileNameCodec(textCodec);
+                zip.setCommentCodec(textCodec);
+                zip.open(QuaZip::mdUnzip);
+
+                QuaZipFile file(&zip);
+
+                size_t totalSize = 0;
+                for(bool f=zip.goToFirstFile(); f; f=zip.goToNextFile()) {
+                    QuaZipFileInfo info;
+                    zip.getCurrentFileInfo(&info);
+                    totalSize += info.uncompressedSize;
+                }
+                qDebug() << "Total size " << totalSize;
+                size_t accumulatedSize = 0;
+                /* TODO!!!!: this whole thing needs to be redone asynchronously */
+                for(bool f=zip.goToFirstFile(); f; f=zip.goToNextFile()) {
+                    file.open(QIODevice::ReadOnly);
+                    //same functionality as QIODevice::readData() -- data is a char*, maxSize is qint64
+                    //file.readData(data,maxSize);
+                    QString filename = file.getActualFileName();
+                    if(file.isOpen()) {
+                        qApp->processEvents();
+                        qDebug() << installDialog.isVisible() << installDialog.value();
+                        if(!installDialog.isVisible() && installDialog.value() != 100 && installDialog.value() != -1)
+                            return;
+                        bool isDir = (filename.right(1) == "/");
+                        if(isDir) {
+                            contentDir.mkpath(filename);
+                        } else {
+                            QFile f(contentDir.absoluteFilePath(filename));
+                            f.open(QIODevice::WriteOnly);
+                            auto data = file.readAll();
+                            accumulatedSize += data.size();
+                            qDebug() << accumulatedSize;
+                            installDialog.setValue(100 * (double)accumulatedSize / totalSize);
+                            qApp->processEvents();
+                            qDebug() << installDialog.isVisible() << installDialog.value();
+                            if(!installDialog.isVisible() && installDialog.value() != 100 && installDialog.value() != -1)
+                                return;
+
+                            f.write(data);
+                        }
+                        qDebug() << file.getActualFileName() << isDir;
+                        
+                        //do something with the data
+                        if(file.isOpen())
+                            file.close();
+                        qApp->processEvents();
+                        qDebug() << installDialog.isVisible() << installDialog.value();
+                        if(!installDialog.isVisible() && installDialog.value() != 100 && installDialog.value() != -1)
+                            return;
+                    }
+                    else {
+                        qDebug() << "Cannot open" << filename << "inside zip";;
+                    }
+                }
+                qDebug() << "Closing zip\n";
+                zip.close();
+
+                launch();
+            }            
         }
     });
     

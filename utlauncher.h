@@ -39,7 +39,7 @@ class UTLauncher: public QApplication
     QTimer serversRefreshTimer;
     QTimer splashTimer;
     QSystemTrayIcon systemTray;
-    
+        
     void prepareConfig();
     
     QColor iconColor() const;

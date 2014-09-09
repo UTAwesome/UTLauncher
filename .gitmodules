@@ -4,3 +4,9 @@
 [submodule "3rdparty/QtAwesome"]
 	path = 3rdparty/QtAwesome
 	url = git://github.com/gamecreature/QtAwesome
+[submodule "quazip"]
+	path = quazip
+	url = https://github.com/binaryking/quazip.git
+[submodule "3rdparty/quazip"]
+	path = 3rdparty/quazip
+	url = https://github.com/binaryking/quazip.git
