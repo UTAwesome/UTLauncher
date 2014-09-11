@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 2.8.12)
-
-project(UTLauncher)
+cmake_policy(SET CMP0048 NEW)
+project(UTLauncher VERSION 0.3.0)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules")
 include(MingwResource)
 include(Version)
+include(DeployQt5) # For Mac
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -17,6 +18,20 @@ find_package(PkgConfig)
 find_package(ZLIB)
 #find_package(Boost COMPONENTS system REQUIRED)
 
+
+if(APPLE)
+#    set(MACOSX_BUNDLE_NAME "UTLauncher.app")
+#    set(prefix "${MACOSX_BUNDLE_NAME}.app/Contents")
+#    set(INSTALL_INCLUDE_DIR "${prefix}/${INSTALL_INCLUDE_DIR}")
+#    set(INSTALL_RUNTIME_DIR "${prefix}/MacOS")
+#    set(INSTALL_LIBRARY_DIR "${prefix}/${INSTALL_LIBRARY_DIR}")
+#    set(INSTALL_ARCHIVE_DIR "${prefix}/${INSTALL_ARCHIVE_DIR}")
+#    set(INSTALL_DATA_DIR    "${prefix}/${INSTALL_DATA_DIR}")
+#    set(INSTALL_DOC_DIR     "${prefix}/${INSTALL_DOC_DIR}")
+#    set(INSTALL_CMAKE_DIR   "${prefix}/Resources")
+endif()
+
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 
 #pkg_check_modules(LIBTORRENT libtorrent-rasterbar)
@@ -24,7 +39,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LIBTORRENT_CFLAGS_STR}")
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
-#add_definitions(-DQT_NO_DEBUG_OUTPUT)
+add_definitions(-DQT_NO_DEBUG_OUTPUT)
 endif()
 
 add_subdirectory(3rdparty)
@@ -38,15 +53,22 @@ endif(CMAKE_SYSTEM_NAME MATCHES Windows)
 
 if(CMAKE_SYSTEM_NAME MATCHES Windows AND CMAKE_BUILD_TYPE MATCHES Release)
 	set(BUILD_TYPE WIN32)
+elseif(CMAKE_SYSTEM_NAME MATCHES Darwin)
+    set(BUILD_TYPE MACOSX_BUNDLE)
+    set(MACOSX_BUNDLE_ICON_FILE icon.icns)
+    set(resources ${resources} ${PROJECT_SOURCE_DIR}/icon.icns)
+    set_source_files_properties(icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 else()
 	set(BUILD_TYPE "")
 endif()
 
-set(UTLauncher_VERSION "0.3.0" CACHE STRING "Version number" FORCE INTERNAL)
+set(UTLauncher_VERSION "${PROJECT_VERSION}" CACHE STRING "Version number" FORCE INTERNAL)
 set_version_number(UTLauncher)
 
 add_definitions(-DNO_DOWNLOAD -DVERSION_MAJOR=${UTLauncher_VERSION_MAJOR} -DVERSION_MINOR=${UTLauncher_VERSION_MINOR} -DVERSION_PATCH=${UTLauncher_VERSION_PATCH})
 add_executable(UTLauncher ${BUILD_TYPE} ${resources} ${rc_srcs} main.cpp utlauncher.cpp download.cpp utsplash.cpp bootstrap.cpp serverbrowser.cpp configdialog.cpp $<TARGET_OBJECTS:QtAwesome> $<TARGET_OBJECTS:quazip>)
+
+
 
 
 if(STATIC_BUILD_WIN32)
@@ -57,4 +79,26 @@ else()
 	target_link_libraries(UTLauncher Qt5::Widgets Qt5::Network ${Boost_SYSTEM_LIBRARY} ${ZLIB_LIBRARY})
 endif()
 
-install(TARGETS UTLauncher RUNTIME DESTINATION bin)
+install(TARGETS UTLauncher BUNDLE DESTINATION . RUNTIME DESTINATION bin)
+##fixup_qt5_executable(${CMAKE_BINARY_DIR}/UTLauncher.app/Contents/MacOS/UTLauncher)
+#fixup_qt5_executable(UTLauncher cocoa)
+
+if(APPLE)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/bundle")
+endif()
+
+install_qt5_executable(UTLauncher.app "cocoa")
+
+if(APPLE)
+  set(CMAKE_INSTALL_PREFIX "/Applications")
+  set(CPACK_GENERATOR "DragNDrop")
+  set(CPACK_DMG_FORMAT "UDBZ")
+  set(CPACK_DMG_VOLUME_NAME "${PROJECT_NAME}")
+  set(CPACK_SYSTEM_NAME "OSX")
+  set(CPACK_PACKAGE_VENDOR "Code Charm Ltd")
+  set(CPACK_PACKAGE_NAME "UTLauncher")
+  set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}")
+  set(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/icon.icns")
+  set(CPACK_DMG_BACKGROUND_IMAGE "${PROJECT_SOURCE_DIR}/splash.jpg")
+  include(CPack)  
+endif()

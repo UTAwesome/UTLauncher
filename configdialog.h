@@ -20,9 +20,6 @@ class FileInput : public QWidget
 {
     Q_OBJECT
     
-    bool isError(QString value) {
-        
-    }
 public:    
     FileInput(QString value, QString label, QString filter, bool mandatory = false, QWidget* parent = nullptr) : QWidget(parent) {
         auto layout = new QHBoxLayout;

@@ -146,7 +146,7 @@ public slots:
                     
                     lastQueryTime = QTime::currentTime();
                     emit queryDone(id);
-                    queryTimer.singleShot(15000 + qrand() % 15000, this, SLOT(query()));
+                    queryTimer.singleShot(10000 + qrand() % 10000, this, SLOT(query()));
                 }
             });
     }
@@ -356,7 +356,7 @@ public:
         if(entry.ping == MAX_PING)
             return false;
 
-         QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
+        return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
      }
      bool lessThan(const QModelIndex &left, const QModelIndex &right) const {
          if(left.column() == (int)Column::Country && right.column() == (int)Column::Country) {
@@ -368,10 +368,10 @@ public:
              auto& leftEntry = model->entryById(left.row());
              auto& rightEntry = model->entryById(right.row());
              
-             return leftEntry.avgPing < rightEntry.avgPing;
+             return std::round(leftEntry.avgPing) < std::round(rightEntry.avgPing);
          }
          
-         QSortFilterProxyModel::lessThan(left, right);
+         return QSortFilterProxyModel::lessThan(left, right);
      }
 };
 
@@ -630,9 +630,11 @@ public:
         }
         {
             auto dockWidget = new QDockWidget("Currently playing", this);
+#ifndef __APPLE__
             dockWidget->setStyle(new iconned_dock_style(awesome->icon(fa::user, {
                     {"scale-factor", 0.6}
                 }), dockWidget->style() ));
+#endif
             
             //auto toolbar = new QToolBar("Currently playing", this);
             
