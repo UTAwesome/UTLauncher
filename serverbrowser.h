@@ -359,16 +359,28 @@ public:
         return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
      }
      bool lessThan(const QModelIndex &left, const QModelIndex &right) const {
-         if(left.column() == (int)Column::Country && right.column() == (int)Column::Country) {
-             auto& leftEntry = model->entryById(left.row());
-             auto& rightEntry = model->entryById(right.row());
-             return QString::compare(leftEntry.countryCode, rightEntry.countryCode) < 0;
-         }
-         if(left.column() == (int)Column::Ping && right.column() == (int)Column::Ping) {
+         bool sortByCountry = (left.column() == (int)Column::Country && right.column() == (int)Column::Country);
+         bool sortByPing = (left.column() == (int)Column::Ping && right.column() == (int)Column::Ping);
+         
+         if(sortByCountry) {
              auto& leftEntry = model->entryById(left.row());
              auto& rightEntry = model->entryById(right.row());
              
-             return std::round(leftEntry.avgPing) < std::round(rightEntry.avgPing);
+             if(leftEntry.countryCode != rightEntry.countryCode)
+                return QString::compare(leftEntry.countryCode, rightEntry.countryCode) < 0;
+             sortByPing = true;
+         }
+         if(sortByPing) {
+             auto& leftEntry = model->entryById(left.row());
+             auto& rightEntry = model->entryById(right.row());
+             
+             int leftPing = std::round(leftEntry.ping);
+             int rightPing = std::round(rightEntry.ping);
+             
+             if(leftPing == rightPing) {
+                 return leftEntry.port < rightEntry.port;
+             }
+             return leftPing < rightPing;
          }
          
          return QSortFilterProxyModel::lessThan(left, right);
