@@ -19,6 +19,7 @@
 #include <QItemSelectionModel>
 #include <QProxyStyle>
 
+#include <cmath>
 
 #include <QDockWidget>
 
@@ -374,8 +375,8 @@ public:
              auto& leftEntry = model->entryById(left.row());
              auto& rightEntry = model->entryById(right.row());
              
-             int leftPing = std::round(leftEntry.ping);
-             int rightPing = std::round(rightEntry.ping);
+             int leftPing = std::round(leftEntry.avgPing);
+             int rightPing = std::round(rightEntry.avgPing);
              
              if(leftPing == rightPing) {
                  return leftEntry.port < rightEntry.port;
