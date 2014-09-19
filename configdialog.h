@@ -90,27 +90,42 @@ class LocationsPage : public QWidget
         auto configGroup = new QGroupBox("Unreal Tournament location");
         {
             
+            auto exeKey = 
+#ifdef LAUNCH_WITH_UE4
+                "UTExePathUE4";
+#else
+                "UTExePath";
+#endif
             auto layout = new QVBoxLayout;
-            auto fileInput = new FileInput(settings.value("UTExePathUE4").toString(), "UnrealTournament executable", QString("UE4")+
+            auto fileInput = new FileInput(settings.value(exeKey).toString(), "UnrealTournament executable",
+                                           QString(
+#ifdef LAUNCH_WITH_UE4
+                                               "UE4"
+#else
+                                               "UnrealTournament"
+#endif
+                                           )+
+                                           
 #ifdef __WIN32__
-                                            "*.exe"
+                                            ".exe"
 #else
                                             QString()
 #endif
                                             ,true,this);
-            connect(fileInput, &FileInput::changed, [&](QString val) {
-                settings.setValue("UTExePathUE4", val);
+            connect(fileInput, &FileInput::changed, [&,exeKey](QString val) {
+                settings.setValue(exeKey, val);
                 settings.sync();
             });
             layout->addWidget(fileInput);
             
+#ifdef LAUNCH_WITH_UE4
             auto info = new QLabel("Look for UE4"
 #ifdef __WIN32__
             ".exe"
 #endif
             " file inside Engine/Binaries/*", this);
             layout->addWidget(info);
-            
+#endif
             
             configGroup->setLayout(layout);
         }

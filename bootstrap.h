@@ -176,14 +176,16 @@ public:
     }
     
     QString programExePath() {
-#ifdef NO_DOWNLOAD
-        QString path = settings.value("UTExePathUE4").toString();
+        QString path = settings.value(
+#ifdef LAUNCH_WITH_UE4
+            "UTExePathUE4"
+#else
+            "UTExePath"
+#endif
+        ).toString();
         if(QFile::exists(path))
             return path;
         return "";
-#else
-        return releasePath + "/WindowsNoEditor/UnrealTournament/Binaries/Win64/UnrealTournament.exe";
-#endif
     }
     
     QString editorExePath() {

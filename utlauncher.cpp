@@ -128,7 +128,11 @@ void UTLauncher::startServerBrowser()
             const auto serverEntry = browser->serverEntryFromAddress(url);
             auto launch = [=] {
                 qDebug() << "Launching!!\n";
-              QProcess::startDetached(exePath, QStringList() << "UnrealTournament" << (url + (spectate?"?SpectatorOnly=1":"")) );  
+              QProcess::startDetached(exePath, QStringList()
+#ifdef LAUNCH_WITH_UE4
+                << "UnrealTournament"
+#endif
+                << (url + (spectate?"?SpectatorOnly=1":"")) );  
             };
                         
             if(serverEntry) {
@@ -290,7 +294,11 @@ void UTLauncher::startServerBrowser()
             openSettings();
             return;
         }
-        QProcess::startDetached(exePath, QStringList() << "UnrealTournament");
+        QProcess::startDetached(exePath
+#ifdef LAUNCH_WITH_UE4
+        , QStringList() << "UnrealTournament"
+#endif
+        );
     });
 
     auto runEditorAction = new QAction(awesome->icon( fa::code ),"Run Editor", this);
