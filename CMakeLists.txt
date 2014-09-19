@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.12)
 cmake_policy(SET CMP0048 NEW)
-project(UTLauncher VERSION 0.3.1)
+project(UTLauncher VERSION 0.3.2)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules")
 include(MingwResource)
@@ -84,12 +84,8 @@ install(TARGETS UTLauncher BUNDLE DESTINATION . RUNTIME DESTINATION bin)
 #fixup_qt5_executable(UTLauncher cocoa)
 
 if(APPLE)
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/bundle")
-endif()
-
-install_qt5_executable(UTLauncher.app "cocoa")
-
-if(APPLE)
+  set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/bundle")
+	install_qt5_executable(UTLauncher.app "cocoa")
   set(CMAKE_INSTALL_PREFIX "/Applications")
   set(CPACK_GENERATOR "DragNDrop")
   set(CPACK_DMG_FORMAT "UDBZ")

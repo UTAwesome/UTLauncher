@@ -89,8 +89,9 @@ class LocationsPage : public QWidget
     LocationsPage(QSettings& settings, bool mandatoryEditor, QWidget* parent = nullptr) {
         auto configGroup = new QGroupBox("Unreal Tournament location");
         {
+            
             auto layout = new QVBoxLayout;
-            auto fileInput = new FileInput(settings.value("UTExePath").toString(), "UnrealTournament executable", QString("UnrealTournament")+
+            auto fileInput = new FileInput(settings.value("UTExePathUE4").toString(), "UnrealTournament executable", QString("UE4")+
 #ifdef __WIN32__
                                             "*.exe"
 #else
@@ -98,10 +99,18 @@ class LocationsPage : public QWidget
 #endif
                                             ,true,this);
             connect(fileInput, &FileInput::changed, [&](QString val) {
-                settings.setValue("UTExePath", val);
+                settings.setValue("UTExePathUE4", val);
                 settings.sync();
             });
             layout->addWidget(fileInput);
+            
+            auto info = new QLabel("Look for UE4"
+#ifdef __WIN32__
+            ".exe"
+#endif
+            " file inside Engine/Binaries/*", this);
+            layout->addWidget(info);
+            
             
             configGroup->setLayout(layout);
         }

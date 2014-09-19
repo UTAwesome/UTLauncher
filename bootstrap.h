@@ -177,7 +177,7 @@ public:
     
     QString programExePath() {
 #ifdef NO_DOWNLOAD
-        QString path = settings.value("UTExePath").toString();
+        QString path = settings.value("UTExePathUE4").toString();
         if(QFile::exists(path))
             return path;
         return "";
