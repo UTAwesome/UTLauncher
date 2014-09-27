@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0.0)
 cmake_policy(SET CMP0048 NEW)
-project(UTLauncher VERSION 0.3.2)
+project(UTLauncher VERSION 0.3.3)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules")
 include(MingwResource)
@@ -17,20 +17,6 @@ find_package(Qt5Network)
 find_package(PkgConfig)
 find_package(ZLIB)
 #find_package(Boost COMPONENTS system REQUIRED)
-
-
-if(APPLE)
-#    set(MACOSX_BUNDLE_NAME "UTLauncher.app")
-#    set(prefix "${MACOSX_BUNDLE_NAME}.app/Contents")
-#    set(INSTALL_INCLUDE_DIR "${prefix}/${INSTALL_INCLUDE_DIR}")
-#    set(INSTALL_RUNTIME_DIR "${prefix}/MacOS")
-#    set(INSTALL_LIBRARY_DIR "${prefix}/${INSTALL_LIBRARY_DIR}")
-#    set(INSTALL_ARCHIVE_DIR "${prefix}/${INSTALL_ARCHIVE_DIR}")
-#    set(INSTALL_DATA_DIR    "${prefix}/${INSTALL_DATA_DIR}")
-#    set(INSTALL_DOC_DIR     "${prefix}/${INSTALL_DOC_DIR}")
-#    set(INSTALL_CMAKE_DIR   "${prefix}/Resources")
-endif()
-
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 
@@ -69,9 +55,6 @@ set_version_number(UTLauncher)
 add_definitions(-DNO_DOWNLOAD -DVERSION_MAJOR=${UTLauncher_VERSION_MAJOR} -DVERSION_MINOR=${UTLauncher_VERSION_MINOR} -DVERSION_PATCH=${UTLauncher_VERSION_PATCH})
 add_executable(UTLauncher ${BUILD_TYPE} ${resources} ${rc_srcs} main.cpp utlauncher.cpp download.cpp utsplash.cpp bootstrap.cpp serverbrowser.cpp configdialog.cpp $<TARGET_OBJECTS:QtAwesome> $<TARGET_OBJECTS:quazip>)
 
-
-
-
 if(STATIC_BUILD_WIN32)
 	pkg_check_modules(QT5WIDGETS Qt5Widgets)
 	add_definitions(-DSTATIC_PLUGIN_WINDOWS)
@@ -81,8 +64,6 @@ else()
 endif()
 
 install(TARGETS UTLauncher BUNDLE DESTINATION . RUNTIME DESTINATION bin)
-##fixup_qt5_executable(${CMAKE_BINARY_DIR}/UTLauncher.app/Contents/MacOS/UTLauncher)
-#fixup_qt5_executable(UTLauncher cocoa)
 
 if(APPLE)
   set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/bundle")

@@ -4,6 +4,7 @@
 #include <QJsonObject>
 #include <QHeaderView>
 #include <QList>
+#include <QLinkedList>
 #include <QJsonArray>
 #include <QStatusBar>
 
@@ -60,7 +61,7 @@ class ServerEntry : public QObject {
     QList<QByteArray> toQuery;
     QTime timer;
     QTime elapsed;
-    QList<int> pingResults;
+    QLinkedList<int> pingResults;
     
     QTimer queryTimer;
     QTime lastQueryTime;
@@ -79,20 +80,29 @@ public:
     QString address() const {
         return host + ":" + QString::number(port);
     }
+    ~ServerEntry() {
+        if(socket)
+            delete socket;
+    }
     
 private slots:
     void onError(QAbstractSocket::SocketError socketError) {
+        qDebug() << "Got error!!!!!!\n";
         queryTimer.stop();
         queryTimer.singleShot(5000, this, SLOT(query()));
         ping = MAX_PING;
         avgPing = MAX_PING;
     }
 public slots:
+    
     void query() {
         if(socket) {
-            socket->deleteLater();
+            delete socket;
         }
         socket = new QTcpSocket(this);
+        
+        pingResults.clear();
+        
         socket->connectToHost(host, queryPort);
             connect(socket, &QTcpSocket::stateChanged, [=](QAbstractSocket::SocketState state) {
                 toQuery = QList<QByteArray>() << "GameMode" << "Map" << "PlayerNum" << "PlayerList";
@@ -125,6 +135,7 @@ public slots:
                     }
                 }
                 
+                qDebug() << "Append " << timer.elapsed() << host;
                 pingResults.append(timer.elapsed());
                 
                 if(toQuery.size()) {
@@ -178,6 +189,12 @@ class ServerListModel : public QAbstractTableModel
     QMap<QString, ServerEntry*> serverMap;
 public:
 
+    ~ServerListModel() {
+        for(auto server: servers) {
+            server->deleteLater();
+        }
+    }
+    
     int playerCount() {
         int count = 0;
         for(auto server: servers) {
@@ -249,6 +266,7 @@ public:
                 emit dataChanged(createIndex(id, 0),createIndex(id, (int)Column::MaxColumn-1));
             });
             
+            qDebug() << "Immediate query " << address;
             entry->query();
         }
         // redo ids

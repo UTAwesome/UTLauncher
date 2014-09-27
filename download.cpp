@@ -23,6 +23,7 @@ void Download::setTarget(const QString &t) {
 void Download::downloadFinished(QNetworkReply *data) {
     
     emit done(data->readAll());
+    data->deleteLater();
 }
 
 void Download::download() {
@@ -61,10 +62,12 @@ void Download::download() {
             if(replyCode != 200) {
                 emit error(replyCode, reply->readAll());
                 disconnect(this, SLOT(downloadProgress(qint64, qint64)));
+                reply->deleteLater();
             }
             return;
         }
     });
+    
     QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(downloadError(QNetworkReply::NetworkError)));
     QObject::connect(reply, SIGNAL(sslErrors(QList<QSslError>)), SLOT(downloadSslErrors(QList<QSslError>)));
 }
@@ -78,6 +81,8 @@ void Download::downloadSslErrors(QList<QSslError> errors) {
 
 void Download::downloadError(QNetworkReply::NetworkError error) {
     qDebug() << "Got download error" << error;
+
+    QObject::sender()->deleteLater();
 }
 
 void Download::downloadProgress(qint64 recieved, qint64 total) {
