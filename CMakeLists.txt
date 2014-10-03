@@ -37,9 +37,10 @@ if(CMAKE_SYSTEM_NAME MATCHES Windows)
 add_win32_resource(rc_srcs application.rc)
 endif(CMAKE_SYSTEM_NAME MATCHES Windows)
 
+add_definitions(-DLAUNCH_WITH_UE4)
 if(CMAKE_SYSTEM_NAME MATCHES Windows AND CMAKE_BUILD_TYPE MATCHES Release)
 	set(BUILD_TYPE WIN32)
-  add_definitions(-DLAUNCH_WITH_UE4)
+
 elseif(CMAKE_SYSTEM_NAME MATCHES Darwin)
     set(BUILD_TYPE MACOSX_BUNDLE)
     set(MACOSX_BUNDLE_ICON_FILE icon.icns)
