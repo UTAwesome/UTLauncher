@@ -256,15 +256,14 @@ public:
             if(!entry) {
                 entry = new ServerEntry();
                 serverMap[address] = entry;
+                connect(entry, &ServerEntry::queryDone, [=](int id) {
+                    emit dataChanged(createIndex(id, 0),createIndex(id, (int)Column::MaxColumn-1));
+                });
             }
             entry->id = id++;
             servers.append(entry);
             
             entry->updateFromJson(object);
-            
-            connect(entry, &ServerEntry::queryDone, [=](int id) {
-                emit dataChanged(createIndex(id, 0),createIndex(id, (int)Column::MaxColumn-1));
-            });
             
             qDebug() << "Immediate query " << address;
             entry->query();
