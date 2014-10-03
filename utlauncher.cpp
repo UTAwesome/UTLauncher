@@ -132,7 +132,8 @@ void UTLauncher::startServerBrowser()
 #ifdef LAUNCH_WITH_UE4
                 << "UnrealTournament"
 #endif
-                << (url + (spectate?"?SpectatorOnly=1":"")) );  
+                << (url + (spectate?"?SpectatorOnly=1":"")) 
+                << "-SaveToUserDir");
             };
                         
             if(serverEntry) {
@@ -296,7 +297,7 @@ void UTLauncher::startServerBrowser()
         }
         QProcess::startDetached(exePath
 #ifdef LAUNCH_WITH_UE4
-        , QStringList() << "UnrealTournament"
+        , QStringList() << "UnrealTournament" << "-SaveToUserDir"
 #endif
         );
     });

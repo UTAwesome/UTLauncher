@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0.0)
 cmake_policy(SET CMP0048 NEW)
-project(UTLauncher VERSION 0.3.4)
+project(UTLauncher VERSION 0.3.5)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules")
 include(MingwResource)
