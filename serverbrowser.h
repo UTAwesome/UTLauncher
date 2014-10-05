@@ -620,7 +620,7 @@ public:
                 
                 auto about = new QAction(awesome->icon(fa::handoup), "About", this);
                 connect(about, &QAction::triggered, [=] {
-                    QMessageBox::about(this, "UTLauncher", "Brought to you by Damian \"Rush\" Kaczmarek from <a href=\"https://codecharm.co.uk\">Code Charm Ltd</a><br><br>Servers delivered and hosted by raxxy and others. Server query code done by TimeH.<br><br>Big thanks to Epic Games for delivering us Unreal Tournament in open fashion!<br><br>Please visit <a href=\"https://forums.unrealtournament.com\">Unreal Tournament forums</a> to participate in development.");
+                    QMessageBox::about(this, "UTLauncher", "Brought to you by Damian \"Rush\" Kaczmarek from <a href=\"https://codecharm.co.uk\">Code Charm Ltd</a> and other contributors:<br><br>Servers delivered and hosted by raxxy and others. Server query code done by TimeH. Splash logo made by Henrik Roysa. Icon made by Archer.<br><br>Big thanks to Epic Games for delivering us Unreal Tournament in open fashion!<br><br>Please visit <a href=\"https://forums.unrealtournament.com\">Unreal Tournament forums</a> to participate in development.");
                 });
                 
                 helpToolbar->addAction(about);
@@ -635,7 +635,7 @@ public:
                 
                 auto helpAction = new QAction(awesome->icon(fa::comments), "IRC Chat", this);
                 connect(helpAction, &QAction::triggered, [=] {
-                    QDesktopServices::openUrl(QUrl("http://webchat.globalgamers.net/?channels=beyondunreal"));
+                    QDesktopServices::openUrl(QUrl("http://webchat.globalgamers.net/?channels=UnrealTournament"));
                 });
                 
                 
