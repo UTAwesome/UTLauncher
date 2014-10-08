@@ -9,6 +9,11 @@ Double click on a server to join. It will ask for `UnrealTournament.exe` on Wind
 
 For compiled binaries no installation is necessary. For source, see below:
 
+## First Step
+Get QtAwesome from: https://github.com/gamecreature/QtAwesome.
+Copy QtAwesome folder to: `/UTLauncher-master/3rdparty/QtAwesome/`.
+Now the folder structure should look like: `/UTLauncher-master/3rdparty/QtAwesome/QtAwesome`.
+
 ### Arch Linux
 
 UTLauncher is available in AUR as [utlauncher-git](https://aur.archlinux.org/packages/utlauncher-git/).  Installation is as follows:
@@ -47,6 +52,17 @@ cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make
 sudo make install
+```
+### Build instructions (Ubuntu)
+
+Install: `sudo apt-get install cmake qtbase5-dev`
+
+Switch to UTLauncher source folder and type:
+```
+mkdir UTLauncher
+cd UTLauncher
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make
 ```
 
 ## License

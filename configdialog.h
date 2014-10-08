@@ -291,6 +291,19 @@ public:
         locationsButton->setSizeHint(QSize(80, 64));
         buttonMap[locationsButton] = 0;
         
+        // desktop type
+    	QString desktop;
+    	bool is_unity;
+
+    	desktop = getenv("XDG_CURRENT_DESKTOP");
+    	is_unity = (desktop.toLower() == "unity");
+
+    	if(is_unity)
+    	{
+    		//dont show ui button
+    	}
+    	else
+    	{
         auto uiButton = new QListWidgetItem(contentsWidget);
         uiButton->setIcon(awesome->icon(fa::desktop));
         uiButton->setText(tr("UI"));
@@ -298,6 +311,7 @@ public:
         uiButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
         uiButton->setSizeHint(QSize(80, 64));
         buttonMap[uiButton] = 1;
+        }
         
 
         connect(contentsWidget,
