@@ -327,47 +327,36 @@ void UTLauncher::startServerBrowser()
     
     systemTray.setContextMenu(systemTrayMenu);
 
-    //desktop type
-    QString desktop;
-    bool is_unity;
 
-    desktop = getenv("XDG_CURRENT_DESKTOP");
-    is_unity = (desktop.toLower() == "unity");
-
-    if(is_unity)
+    // shows unity appindicator
+    #ifdef APPINDICATOR
+    // hide qt systemtray - not working on unity
+    systemTray.hide();
+    ShowUnityAppIndicator(); //TODO: implement appindicator
+    #endif
+    
+    #ifndef APPINDICATOR
+    systemTray.show();
+    
+    connect(&systemTray, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason)
     {
-        // hide qt systemtray - not working on unity
-        systemTray.hide();
-        // shows unity appindicator
-        #ifdef APPINDICATOR
-        ShowUnityAppIndicator(); //TODO: implement appindicator
-    	#endif
-    }
-    else
-    {
-        systemTray.show();
-
-        connect(&systemTray, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason)
-        {
-            qApp->setQuitOnLastWindowClosed(true);
-            
-            runEditorAction->setVisible(hasEditorSupport());
-            
-            switch(reason)
-            {
-                case QSystemTrayIcon::Trigger:
-                {
-                    if(browser->isHidden())
-                    {
-                    browser->show();
-                    }
-                    else
-                    {
-                    browser->hide();
-                    }   
-                    break;
-                }
-            }
-        });
-    }
+    	qApp->setQuitOnLastWindowClosed(true);
+    	runEditorAction->setVisible(hasEditorSupport());
+    	switch(reason)
+    	{
+    		case QSystemTrayIcon::Trigger:
+    		{
+    			if(browser->isHidden())
+    			{
+    				browser->show();
+    			}
+    			else
+    			{
+    				browser->hide();
+    			}
+    			break;
+    		}
+    	}
+    });
+    #endif
 }

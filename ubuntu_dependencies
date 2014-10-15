@@ -1,3 +1,0 @@
-sudo apt-get install qtbase5-dev g++ cmake libappindicator-dev
-sudo apt-get remove qtbase5-dev g++ cmake libappindicator-dev
-
