@@ -17,6 +17,7 @@ public:
     void setTarget(const QString& t);
     
 private:
+    int httpCode;
     QNetworkAccessManager manager;
     QString target;
 
@@ -25,6 +26,7 @@ signals:
     
     void progress(double progress);
     void chunk(QByteArray chunk);
+    void error(int code, QByteArray data);
 
 public slots:
     void download();

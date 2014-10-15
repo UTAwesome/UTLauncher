@@ -3,16 +3,11 @@
 UTLauncher is a standalone application to join UT4 servers. You will need latest raxxy's UT build to use this though.
 In the future it is planned to automatically download latest UT playable releases.
 
-Double click on a server to join. It will ask for UnrealTournament.exe
+Double click on a server to join. It will ask for `UnrealTournament.exe` on Windows or `UnrealTournament` on Linux or Mac.
 
 ## Installation
 
 For compiled binaries no installation is necessary. For source, see below:
-
-## First Step
-Get QtAwesome from: https://github.com/gamecreature/QtAwesome.
-Copy QtAwesome folder to: `/UTLauncher-master/3rdparty/QtAwesome/`.
-Now the folder structure should look like: `/UTLauncher-master/3rdparty/QtAwesome/QtAwesome`.
 
 ### Arch Linux
 
@@ -26,12 +21,23 @@ makepkg -s
 pacman -U utlauncher-git*.pkg.tar.xz
 ```
 
-### Build instructions (Linux)
+### Build instructions
 
-You need to install Qt5 base development package. In openSUSE it is `libqt5-qtbase-devel`.
+#### Requirements
+You need to install Qt5 base development package, G++ compiler and cmake.
 
-openSUSE + Qt5 repo mey be: `libQt5Gui-devel` `libQt5Network-devel` `libQt5Widgets-devel`
+##### Ubuntu
+```
+sudo apt-add-repository ppa:ubuntu-sdk-team/ppa
+sudo apt-get update
+sudo apt-get install qtbase5-dev g++ cmake
+```
+##### openSUSE
+`sudo zypper install libqt5-qtbase-devel gcc-c++ cmake`
+##### openSUSE + Qt5 repo
+`sudo zypper install libQt5Gui-devel libQt5Network-devel libQt5Widgets-devel gcc-c++ cmake`
 
+### Build 
 ```
 git clone https://github.com/CodeCharmLtd/UTLauncher.git
 mkdir UTLauncher/build
@@ -41,17 +47,6 @@ cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make
 sudo make install
-```
-### Build instructions (Ubuntu)
-
-Install: `sudo apt-get install cmake qtbase5-dev`
-
-Switch to UTLauncher source folder and type:
-```
-mkdir UTLauncher
-cd UTLauncher
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make
 ```
 
 ## License

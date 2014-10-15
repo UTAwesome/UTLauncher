@@ -14,20 +14,47 @@ set(CMAKE_AUTOMOC ON)
 find_package(Qt5Widgets)
 find_package(Qt5Network)
 find_package(PkgConfig)
+find_package(ZLIB)
 #find_package(Boost COMPONENTS system REQUIRED)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+# appindicator --------------------------------------------
+IF(WITH_APPINDICATOR)
+	pkg_check_modules(PC_APPINDICATOR REQUIRED appindicator-0.1)
+	pkg_check_modules(GTK2 REQUIRED gtk+-2.0)
+
+	find_path(APPINDICATOR_INCLUDE_DIR NAMES libappindicator/app-indicator.h
+		HINTS ${PC_APPINDICATOR_INCLUDEDIR} ${PC_APPINDICATOR_INCLUDE_DIRS}
+		PATH_SUFFIXES libappindicator-0.1)
+
+	find_library(APPINDICATOR_LIBRARY NAMES appindicator)
+
+	include(FindPackageHandleStandardArgs)
+
+	find_package_handle_standard_args(APPINDICATOR DEFAULT_MSG APPINDICATOR_LIBRARY APPINDICATOR_INCLUDE_DIR)
+
+	if(APPINDICATOR_FOUND)
+		set(APPINDICATOR_LIBRARIES ${APPINDICATOR_LIBRARY})
+		set(APPINDICATOR_INCLUDE_DIRS ${APPINDICATOR_INCLUDE_DIR})
+	endif()
+
+	mark_as_advanced(APPINDICATOR_INCLUDE_DIR APPINDICATOR_LIBRARY)
+ENDIF()
+# ------------------------------------------------------------
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 
 #pkg_check_modules(LIBTORRENT libtorrent-rasterbar)
 #string (REPLACE ";" " " LIBTORRENT_CFLAGS_STR "${LIBTORRENT_CFLAGS} -DBOOST_THREAD_USE_LIB")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LIBTORRENT_CFLAGS_STR}")
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
-add_definitions(-DQT_NO_DEBUG_OUTPUT)
+#add_definitions(-DQT_NO_DEBUG_OUTPUT)
 endif()
 
 add_subdirectory(3rdparty)
-include_directories(${3rdparty_INCLUDE_DIRS})
+#include_directories(${3rdparty_INCLUDE_DIRS})
+include_directories(${3rdparty_INCLUDE_DIRS} ${GTK2_INCLUDE_DIRS} ${APPINDICATOR_INCLUDE_DIR})
+link_directories(${GTK2_LIBRARY_DIRS} ${APPINDICATOR_LIBRARY})
 
 qt5_add_resources(resources files.qrc flags.qrc)
 
@@ -37,23 +64,29 @@ endif(CMAKE_SYSTEM_NAME MATCHES Windows)
 
 if(CMAKE_SYSTEM_NAME MATCHES Windows AND CMAKE_BUILD_TYPE MATCHES Release)
 	set(BUILD_TYPE WIN32)
+	add_definitions(-DLAUNCH_WITH_UE4)
 else()
 	set(BUILD_TYPE "")
 endif()
 
-set(UTLauncher_VERSION "0.2.6" CACHE STRING "Version number" FORCE INTERNAL)
+set(UTLauncher_VERSION "0.3.2" CACHE STRING "Version number" FORCE INTERNAL)
 set_version_number(UTLauncher)
 
 add_definitions(-DNO_DOWNLOAD -DVERSION_MAJOR=${UTLauncher_VERSION_MAJOR} -DVERSION_MINOR=${UTLauncher_VERSION_MINOR} -DVERSION_PATCH=${UTLauncher_VERSION_PATCH})
-add_executable(UTLauncher ${BUILD_TYPE} ${resources} ${rc_srcs} main.cpp utlauncher.cpp download.cpp utsplash.cpp bootstrap.cpp serverbrowser.cpp configdialog.cpp $<TARGET_OBJECTS:QtAwesome>)
+add_executable(UTLauncher ${BUILD_TYPE} ${resources} ${rc_srcs} main.cpp utlauncher.cpp download.cpp utsplash.cpp bootstrap.cpp serverbrowser.cpp configdialog.cpp $<TARGET_OBJECTS:QtAwesome> $<TARGET_OBJECTS:quazip>)
 
 
 if(STATIC_BUILD_WIN32)
 	pkg_check_modules(QT5WIDGETS Qt5Widgets)
 	add_definitions(-DSTATIC_PLUGIN_WINDOWS)
-	target_link_libraries(UTLauncher Qt5::Widgets Qt5::QWindowsIntegrationPlugin Qt5::Network ${QT5WIDGETS_LDFLAGS})
+	target_link_libraries(UTLauncher Qt5::Widgets Qt5::QWindowsIntegrationPlugin Qt5::Network ${QT5WIDGETS_LDFLAGS} ${ZLIB_LIBRARY})
 else()
-	target_link_libraries(UTLauncher Qt5::Widgets Qt5::Network ${Boost_SYSTEM_LIBRARY})
+	if(APPINDICATOR_FOUND)
+		add_definitions(-DAPPINDICATOR)
+		target_link_libraries(UTLauncher Qt5::Widgets Qt5::Network ${Boost_SYSTEM_LIBRARY} ${ZLIB_LIBRARY} ${GTK2_LIBRARIES} ${APPINDICATOR_LIBRARY})
+	else()
+		target_link_libraries(UTLauncher Qt5::Widgets Qt5::Network ${Boost_SYSTEM_LIBRARY} ${ZLIB_LIBRARY})
+	endif()
 endif()
 
 install(TARGETS UTLauncher RUNTIME DESTINATION bin)

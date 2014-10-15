@@ -10,6 +10,7 @@
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QSettings>
 #include <QDir>
 #include <QFileDialog>
@@ -30,6 +31,8 @@ class Bootstrap : public QObject {
     QString releasePath;
     QString torrentFullFile;
     QSettings& settings;
+    QSet<QString> stockMaps;
+    
     
     QTimer bootstrapRedownloadTimer;
     
@@ -53,6 +56,10 @@ private slots:
 public:  
     QString MOTD() {
         return motd;
+    }
+    
+    bool isStockMap(QString map) const {
+        return stockMaps.contains(map);
     }
     
     Bootstrap(QSettings& _settings, QObject* parent = nullptr) : QObject(parent), settings(_settings) {
@@ -85,6 +92,11 @@ public:
             downloadServers.download();
             
             bootstrapRedownloadTimer.singleShot(15*60000, &download, SLOT(download()));
+            stockMaps.clear();
+            for(auto stockMap : json.value("stockMaps").toArray()) {
+                auto mapString = stockMap.toString();
+                stockMaps.insert(mapString);
+            }
             
 #ifdef NO_DOWNLOAD
             emit ready();
@@ -164,14 +176,16 @@ public:
     }
     
     QString programExePath() {
-#ifdef NO_DOWNLOAD
-        QString path = settings.value("UTExePath").toString();
+        QString path = settings.value(
+        #ifdef LAUNCH_WITH_UE4
+            "UTExePathUE4"
+        #else
+            "UTExePath"
+        #endif
+            ).toString();
         if(QFile::exists(path))
             return path;
         return "";
-#else
-        return releasePath + "/WindowsNoEditor/UnrealTournament/Binaries/Win64/UnrealTournament.exe";
-#endif
     }
     
     QString editorExePath() {

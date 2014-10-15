@@ -92,19 +92,44 @@ class LocationsPage : public QWidget
     LocationsPage(QSettings& settings, bool mandatoryEditor, QWidget* parent = nullptr) {
         auto configGroup = new QGroupBox("Unreal Tournament location");
         {
+            auto exeKey =
+            #ifdef LAUNCH_WITH_UE4
+                "UTExePathUE4";
+            #else
+                "UTExePath";
+            #endif
+
             auto layout = new QVBoxLayout;
-            auto fileInput = new FileInput(settings.value("UTExePath").toString(), "UnrealTournament executable", QString("UnrealTournament")+
-#ifdef __WIN32__
-                                            "*.exe"
-#else
-                                            QString()
-#endif
-                                            ,true,this);
-            connect(fileInput, &FileInput::changed, [&](QString val) {
-                settings.setValue("UTExePath", val);
+
+            auto fileInput = new FileInput(settings.value(exeKey).toString(), "UnrealTournament executable",
+                QString(
+                #ifdef LAUNCH_WITH_UE4
+                    "UE4"
+                #else
+                    "UnrealTournament"
+                #endif
+                    )
+                #ifdef __WIN32__
+                    ".exe"
+                //#else
+                //    QString() //Stupid Compile Error
+                #endif
+                    ,true,this);
+
+            connect(fileInput, &FileInput::changed, [&,exeKey](QString val) {
+                settings.setValue(exeKey, val);
                 settings.sync();
             });
             layout->addWidget(fileInput);
+
+            #ifdef LAUNCH_WITH_UE4
+                auto info = new QLabel("Look for UE4"
+            #ifdef __WIN32__
+                ".exe"
+            #endif
+                " file inside Engine/Binaries/*", this);
+                layout->addWidget(info);
+            #endif
             
             configGroup->setLayout(layout);
         }
@@ -271,28 +296,27 @@ public:
         buttonMap[locationsButton] = 0;
         
         // desktop type
-    	QString desktop;
-    	bool is_unity;
+        QString desktop;
+        bool is_unity;
 
-    	desktop = getenv("XDG_CURRENT_DESKTOP");
-    	is_unity = (desktop.toLower() == "unity");
+        desktop = getenv("XDG_CURRENT_DESKTOP");
+        is_unity = (desktop.toLower() == "unity");
 
-    	if(is_unity)
-    	{
-    		//dont show ui button
-    	}
-    	else
-    	{
-        auto uiButton = new QListWidgetItem(contentsWidget);
-        uiButton->setIcon(awesome->icon(fa::desktop));
-        uiButton->setText(tr("UI"));
-        uiButton->setTextAlignment(Qt::AlignHCenter);
-        uiButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-        uiButton->setSizeHint(QSize(80, 64));
-        buttonMap[uiButton] = 1;
+        if(is_unity)
+        {
+            //dont show ui button
+        }
+        else
+        {
+            auto uiButton = new QListWidgetItem(contentsWidget);
+            uiButton->setIcon(awesome->icon(fa::desktop));
+            uiButton->setText(tr("UI"));
+            uiButton->setTextAlignment(Qt::AlignHCenter);
+            uiButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+            uiButton->setSizeHint(QSize(80, 64));
+            buttonMap[uiButton] = 1;
         }
         
-
         connect(contentsWidget,
                 SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)),
                 this, SLOT(changePage(QListWidgetItem*,QListWidgetItem*)));
