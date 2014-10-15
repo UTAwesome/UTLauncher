@@ -24,13 +24,11 @@ pacman -U utlauncher-git*.pkg.tar.xz
 ### Build instructions
 
 #### Requirements
-You need to install Qt5 base development package, G++ compiler and cmake.
+You need to install Qt5 base development package, libappindicator-dev, G++ compiler and cmake.
 
 ##### Ubuntu
 ```
-sudo apt-add-repository ppa:ubuntu-sdk-team/ppa
-sudo apt-get update
-sudo apt-get install qtbase5-dev g++ cmake
+sudo apt-get install qtbase5-dev g++ cmake libappindicator-dev
 ```
 ##### openSUSE
 `sudo zypper install libqt5-qtbase-devel gcc-c++ cmake`
@@ -45,7 +43,17 @@ cd UTLauncher
 git submodule update --init --recursive
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
+```
+to build with ubuntu appindicator:
+```
+cmake .. -DCMAKE_BUILD_TYPE=Release -DWITH_APPINDICATOR=1
+```
+
+```
 make
+```
+optional:
+```
 sudo make install
 ```
 
