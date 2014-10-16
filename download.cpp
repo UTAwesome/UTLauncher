@@ -35,15 +35,15 @@ void Download::download() {
     httpCode = 0;
     request.setRawHeader( "User-Agent" , QString("UTLauncher %1.%2.%3 / %4").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_PATCH).arg(
 #if defined Q_OS_WINDOWS
-        "Windows"
+		"Windows"
 #elif defined Q_OS_LINUX
-        "Linux"
+		"Linux"
 #elif defined Q_OS_MAX
-        "MacOSX"
+		"MacOSX"
 #else
-        "Unknown"
+		"Unknown"
 #endif
-        ).toUtf8() );
+		).toUtf8() );
     QNetworkReply* reply = manager.get(request);
     QObject::connect(reply, SIGNAL(downloadProgress(qint64,qint64)), this, SLOT(downloadProgress(qint64,qint64)));
     

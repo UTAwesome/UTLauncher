@@ -1,6 +1,5 @@
 macro (set_version_number _packageName)
     if (DEFINED ${_packageName}_VERSION)
-        message(STATUS "STATUS DEFAINED!! ${_packageName} ${${_packageName}_VERSION}")
         string (REGEX MATCHALL "[0-9]+" _versionComponents "${${_packageName}_VERSION}")
         list (LENGTH _versionComponents _len)
         if (${_len} GREATER 0)

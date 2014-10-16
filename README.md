@@ -29,6 +29,7 @@ You need to install Qt5 base development package, libappindicator-dev, G++ compi
 ##### Ubuntu
 ```
 sudo apt-get install qtbase5-dev g++ cmake libappindicator-dev
+Important: rename CMakeLists.txt to CMakeLists.txt.bak and CMakeLists_ubuntu.txt to CMakeLists.txt to allow compiling on ubuntu!
 ```
 ##### openSUSE
 `sudo zypper install libqt5-qtbase-devel gcc-c++ cmake`

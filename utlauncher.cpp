@@ -132,12 +132,12 @@ void UTLauncher::startServerBrowser()
             const auto serverEntry = browser->serverEntryFromAddress(url);
             auto launch = [=] {
                 qDebug() << "Launching!!\n";
-                QProcess::startDetached(exePath, QStringList()
-                #ifdef LAUNCH_WITH_UE4
-                    << "UnrealTournament"
-                #endif
-                    << (url + (spectate?"?SpectatorOnly=1":""))
-                    << "-SaveToUserDir");
+              QProcess::startDetached(exePath, QStringList()
+#ifdef LAUNCH_WITH_UE4
+                << "UnrealTournament"
+#endif
+                << (url + (spectate?"?SpectatorOnly=1":"")) 
+                << "-SaveToUserDir");
             };
                         
             if(serverEntry) {
@@ -300,10 +300,10 @@ void UTLauncher::startServerBrowser()
             return;
         }
         QProcess::startDetached(exePath
-            #ifdef LAUNCH_WITH_UE4
-            , QStringList() << "UnrealTournament" << "-SaveToUserDir"
-            #endif
-            );
+#ifdef LAUNCH_WITH_UE4
+        , QStringList() << "UnrealTournament" << "-SaveToUserDir"
+#endif
+        );
     });
 
     auto runEditorAction = new QAction(awesome->icon( fa::code ),"Run Editor", this);
@@ -327,37 +327,35 @@ void UTLauncher::startServerBrowser()
     systemTrayMenu->addAction(quitAction);
     
     systemTray.setContextMenu(systemTrayMenu);
-
-
+    
     // shows unity appindicator
     #ifdef APPINDICATOR
     // hide qt systemtray - not working on unity
     systemTray.hide();
-    ShowUnityAppIndicator(); //TODO: implement appindicator
+    ShowUnityAppIndicator(); //TODO: implement full appindicator
     #endif
 
     #ifndef APPINDICATOR
     systemTray.show();
     
-    connect(&systemTray, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason)
-    {
-    	qApp->setQuitOnLastWindowClosed(true);
-    	runEditorAction->setVisible(hasEditorSupport());
-    	switch(reason)
-    	{
-    		case QSystemTrayIcon::Trigger:
-    		{
-    			if(browser->isHidden())
-    			{
-    				browser->show();
-    			}
-    			else
-    			{
-    				browser->hide();
-    			}
-    			break;
-    		}
-    	}
+    connect(&systemTray, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason) {
+        qApp->setQuitOnLastWindowClosed(true);
+        
+        runEditorAction->setVisible(hasEditorSupport());
+        
+        switch(reason) {
+            
+            case QSystemTrayIcon::Trigger:
+            {
+                if(browser->isHidden()) {
+                    browser->show();
+                } else {
+                    browser->hide();
+                }
+                break;
+            }
+
+        }
     });
     #endif
 }

@@ -94,14 +94,15 @@ private slots:
         avgPing = MAX_PING;
     }
 public slots:
+    
     void query() {
         if(socket) {
             delete socket;
         }
         socket = new QTcpSocket(this);
-
+        
         pingResults.clear();
-
+        
         socket->connectToHost(host, queryPort);
             connect(socket, &QTcpSocket::stateChanged, [=](QAbstractSocket::SocketState state) {
                 toQuery = QList<QByteArray>() << "GameMode" << "Map" << "PlayerNum" << "PlayerList";
@@ -157,7 +158,7 @@ public slots:
                     
                     lastQueryTime = QTime::currentTime();
                     emit queryDone(id);
-                    queryTimer.singleShot(15000 + qrand() % 15000, this, SLOT(query()));
+                    queryTimer.singleShot(10000 + qrand() % 10000, this, SLOT(query()));
                 }
             });
     }
@@ -193,7 +194,7 @@ public:
             server->deleteLater();
         }
     }
-
+    
     int playerCount() {
         int count = 0;
         for(auto server: servers) {
@@ -373,36 +374,34 @@ public:
         if(entry.ping == MAX_PING)
             return false;
 
-         QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
+        return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
      }
      bool lessThan(const QModelIndex &left, const QModelIndex &right) const {
-     	
-     	bool sortByCountry = (left.column() == (int)Column::Country && right.column() == (int)Column::Country);
-     	bool sortByPing = (left.column() == (int)Column::Ping && right.column() == (int)Column::Ping);
-     	
-     	if(sortByCountry) {
-     		auto& leftEntry = model->entryById(left.row());
-     		auto& rightEntry = model->entryById(right.row());
-
-     		if(leftEntry.countryCode != rightEntry.countryCode)
-     			return QString::compare(leftEntry.countryCode, rightEntry.countryCode) < 0;
-     		sortByPing = true;
-     	}
-
-     	if(sortByPing) {
-     		auto& leftEntry = model->entryById(left.row());
-     		auto& rightEntry = model->entryById(right.row());
-
-     		int leftPing = std::round(leftEntry.avgPing);
-     		int rightPing = std::round(rightEntry.avgPing);
-
-     		if(leftPing == rightPing) {
-     			return leftEntry.port < rightEntry.port;
-     		}
-     		return leftPing < rightPing;
-     	}
-
-     	QSortFilterProxyModel::lessThan(left, right);
+         bool sortByCountry = (left.column() == (int)Column::Country && right.column() == (int)Column::Country);
+         bool sortByPing = (left.column() == (int)Column::Ping && right.column() == (int)Column::Ping);
+         
+         if(sortByCountry) {
+             auto& leftEntry = model->entryById(left.row());
+             auto& rightEntry = model->entryById(right.row());
+             
+             if(leftEntry.countryCode != rightEntry.countryCode)
+                return QString::compare(leftEntry.countryCode, rightEntry.countryCode) < 0;
+             sortByPing = true;
+         }
+         if(sortByPing) {
+             auto& leftEntry = model->entryById(left.row());
+             auto& rightEntry = model->entryById(right.row());
+             
+             int leftPing = std::round(leftEntry.avgPing);
+             int rightPing = std::round(rightEntry.avgPing);
+             
+             if(leftPing == rightPing) {
+                 return leftEntry.port < rightEntry.port;
+             }
+             return leftPing < rightPing;
+         }
+         
+         return QSortFilterProxyModel::lessThan(left, right);
      }
 };
 
@@ -472,13 +471,14 @@ protected:
             event->ignore();
             this->hide();
             return;
-            
-            /* not working --> file is read only...
+        }
+        
+        /* not working --> file is read only...
             #ifdef APPINDICATOR
             QFile::remove(QDir::tempPath()+"/indicator_utlauncher.png");
             #endif
             */
-        }
+
         QMainWindow::closeEvent(event);
     }
     
@@ -627,7 +627,7 @@ public:
                 
                 auto about = new QAction(awesome->icon(fa::handoup), "About", this);
                 connect(about, &QAction::triggered, [=] {
-                    QMessageBox::about(this, "UTLauncher", "Brought to you by Damian \"Rush\" Kaczmarek from <a href=\"https://codecharm.co.uk\">Code Charm Ltd</a><br><br>Servers delivered and hosted by raxxy and others. Server query code done by TimeH.<br><br>Big thanks to Epic Games for delivering us Unreal Tournament in open fashion!<br><br>Please visit <a href=\"https://forums.unrealtournament.com\">Unreal Tournament forums</a> to participate in development.");
+                    QMessageBox::about(this, "UTLauncher", "Brought to you by Damian \"Rush\" Kaczmarek from <a href=\"https://codecharm.co.uk\">Code Charm Ltd</a> and other contributors:<br><br>Servers delivered and hosted by raxxy and others. Server query code done by TimeH. Splash logo made by Henrik Roysa. Icon made by Archer.<br><br>Big thanks to Epic Games for delivering us Unreal Tournament in open fashion!<br><br>Please visit <a href=\"https://forums.unrealtournament.com\">Unreal Tournament forums</a> to participate in development.");
                 });
                 
                 helpToolbar->addAction(about);
@@ -642,7 +642,7 @@ public:
                 
                 auto helpAction = new QAction(awesome->icon(fa::comments), "IRC Chat", this);
                 connect(helpAction, &QAction::triggered, [=] {
-                    QDesktopServices::openUrl(QUrl("http://webchat.globalgamers.net/?channels=beyondunreal"));
+                    QDesktopServices::openUrl(QUrl("http://webchat.globalgamers.net/?channels=UnrealTournament"));
                 });
                 
                 
@@ -667,9 +667,11 @@ public:
         }
         {
             auto dockWidget = new QDockWidget("Currently playing", this);
+#ifndef __APPLE__
             dockWidget->setStyle(new iconned_dock_style(awesome->icon(fa::user, {
                     {"scale-factor", 0.6}
                 }), dockWidget->style() ));
+#endif
             
             //auto toolbar = new QToolBar("Currently playing", this);
             

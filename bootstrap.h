@@ -177,12 +177,12 @@ public:
     
     QString programExePath() {
         QString path = settings.value(
-        #ifdef LAUNCH_WITH_UE4
+#ifdef LAUNCH_WITH_UE4
             "UTExePathUE4"
-        #else
+#else
             "UTExePath"
-        #endif
-            ).toString();
+#endif
+        ).toString();
         if(QFile::exists(path))
             return path;
         return "";
