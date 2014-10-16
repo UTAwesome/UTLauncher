@@ -1,7 +1,6 @@
 #ifndef APPINDICATOR_H
 #define APPINDICATOR_H
 
-//#ifdef APPINDICATOR
 #undef signals
 extern "C" {
   
@@ -14,7 +13,6 @@ extern "C" {
   void quitIndicator(GtkMenu *, gpointer);
 }
 #define signals public
-//#endif
 /*
 void UTLauncher::startServerBrowser()
  systemTrayMenu->addAction(showBrowser);
@@ -125,16 +123,17 @@ auto showBrowser = new QAction(awesome->icon(fa::listalt), "Server List", this);
         QProcess::startDetached(editorPath, QStringList() << projectPath);
     });
 */
-
-
-
     indicator = app_indicator_new(
         "UTLauncher", //id
         "indicator_utlauncher", //icon default:indicator-messages
         APP_INDICATOR_CATEGORY_APPLICATION_STATUS //category
     );
-    
-    QFile::copy(":/indicator_utlauncher.png", QDir::tempPath()+"/indicator_utlauncher.png");
+
+    QFile tempfile;
+    tempfile.copy(":/indicator_utlauncher.png", QDir::tempPath()+"/indicator_utlauncher.png");
+    // not working...
+    //tempfile.setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ReadUser | QFile::WriteUser | QFile::ReadOther | QFile::WriteOther);
+
     app_indicator_set_icon_theme_path(indicator, "/tmp");
     app_indicator_set_icon_full(indicator, "indicator_utlauncher", "");
 

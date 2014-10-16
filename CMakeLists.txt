@@ -62,14 +62,15 @@ if(CMAKE_SYSTEM_NAME MATCHES Windows)
 add_win32_resource(rc_srcs application.rc)
 endif(CMAKE_SYSTEM_NAME MATCHES Windows)
 
+add_definitions(-DLAUNCH_WITH_UE4)
 if(CMAKE_SYSTEM_NAME MATCHES Windows AND CMAKE_BUILD_TYPE MATCHES Release)
 	set(BUILD_TYPE WIN32)
-	add_definitions(-DLAUNCH_WITH_UE4)
+	#add_definitions(-DLAUNCH_WITH_UE4)
 else()
 	set(BUILD_TYPE "")
 endif()
 
-set(UTLauncher_VERSION "0.3.2" CACHE STRING "Version number" FORCE INTERNAL)
+set(UTLauncher_VERSION "0.3.6" CACHE STRING "Version number" FORCE INTERNAL)
 set_version_number(UTLauncher)
 
 add_definitions(-DNO_DOWNLOAD -DVERSION_MAJOR=${UTLauncher_VERSION_MAJOR} -DVERSION_MINOR=${UTLauncher_VERSION_MINOR} -DVERSION_PATCH=${UTLauncher_VERSION_PATCH})

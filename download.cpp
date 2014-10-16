@@ -23,6 +23,7 @@ void Download::setTarget(const QString &t) {
 void Download::downloadFinished(QNetworkReply *data) {
     
     emit done(data->readAll());
+    data->deleteLater();
 }
 
 void Download::download() {
@@ -34,15 +35,15 @@ void Download::download() {
     httpCode = 0;
     request.setRawHeader( "User-Agent" , QString("UTLauncher %1.%2.%3 / %4").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_PATCH).arg(
 #if defined Q_OS_WINDOWS
-		"Windows"
+        "Windows"
 #elif defined Q_OS_LINUX
-		"Linux"
+        "Linux"
 #elif defined Q_OS_MAX
-		"MacOSX"
+        "MacOSX"
 #else
-		"Unknown"
+        "Unknown"
 #endif
-		).toUtf8() );
+        ).toUtf8() );
     QNetworkReply* reply = manager.get(request);
     QObject::connect(reply, SIGNAL(downloadProgress(qint64,qint64)), this, SLOT(downloadProgress(qint64,qint64)));
     
@@ -61,10 +62,12 @@ void Download::download() {
             if(replyCode != 200) {
                 emit error(replyCode, reply->readAll());
                 disconnect(this, SLOT(downloadProgress(qint64, qint64)));
+                reply->deleteLater();
             }
             return;
         }
     });
+    
     QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(downloadError(QNetworkReply::NetworkError)));
     QObject::connect(reply, SIGNAL(sslErrors(QList<QSslError>)), SLOT(downloadSslErrors(QList<QSslError>)));
 }
@@ -78,6 +81,8 @@ void Download::downloadSslErrors(QList<QSslError> errors) {
 
 void Download::downloadError(QNetworkReply::NetworkError error) {
     qDebug() << "Got download error" << error;
+
+    QObject::sender()->deleteLater();
 }
 
 void Download::downloadProgress(qint64 recieved, qint64 total) {
