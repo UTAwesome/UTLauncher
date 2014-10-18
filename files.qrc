@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>splash.jpg</file>
         <file>icon.png</file>
+        <file>indicator_utlauncher.png</file>
     </qresource>
 </RCC>

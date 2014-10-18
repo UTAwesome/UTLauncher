@@ -472,6 +472,11 @@ protected:
             this->hide();
             return;
         }
+        
+        #ifdef APPINDICATOR
+        QFile::remove(QDir::tempPath()+"/indicator_utlauncher.png");
+        #endif
+
         QMainWindow::closeEvent(event);
     }
     
