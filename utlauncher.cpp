@@ -7,6 +7,10 @@
 #include "configdialog.h"
 #include <QProgressDialog>
 
+ifdef APPINDICATOR
+#include "appindicator.h"
+#endif
+
 QtAwesome* awesome;
 
 QColor UTLauncher::iconColor() const {
@@ -323,6 +327,14 @@ void UTLauncher::startServerBrowser()
     systemTrayMenu->addAction(quitAction);
     
     systemTray.setContextMenu(systemTrayMenu);
+    // shows unity appindicator
+    #ifdef APPINDICATOR
+    // hide qt systemtray - not working on unity
+    systemTray.hide();
+    ShowUnityAppIndicator(); //TODO: implement full appindicator
+    #endif
+
+    #ifndef APPINDICATOR
     systemTray.show();
     
     connect(&systemTray, &QSystemTrayIcon::activated, [=](QSystemTrayIcon::ActivationReason reason) {
@@ -344,5 +356,6 @@ void UTLauncher::startServerBrowser()
 
         }
     });
+    #endif
     
 }
