@@ -29,6 +29,7 @@ You need to install Qt5 base development package, G++ compiler and cmake.
 ##### Ubuntu
 ```
 sudo apt-add-repository ppa:ubuntu-sdk-team/ppa
+sudo apt-add-repository ppa:packetlost/cmake
 sudo apt-get update
 sudo apt-get install qtbase5-dev g++ cmake
 ```
