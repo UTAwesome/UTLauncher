@@ -7,7 +7,11 @@
 #include "configdialog.h"
 #include <QProgressDialog>
 
+<<<<<<< HEAD
 #ifdef APPINDICATOR
+=======
+ifdef APPINDICATOR
+>>>>>>> origin/master_newest
 #include "appindicator.h"
 #endif
 
@@ -327,7 +331,10 @@ void UTLauncher::startServerBrowser()
     systemTrayMenu->addAction(quitAction);
     
     systemTray.setContextMenu(systemTrayMenu);
+<<<<<<< HEAD
     
+=======
+>>>>>>> origin/master_newest
     // shows unity appindicator
     #ifdef APPINDICATOR
     // hide qt systemtray - not working on unity
@@ -358,4 +365,8 @@ void UTLauncher::startServerBrowser()
         }
     });
     #endif
+<<<<<<< HEAD
+=======
+    
+>>>>>>> origin/master_newest
 }

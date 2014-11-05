@@ -473,11 +473,17 @@ protected:
             return;
         }
         
+<<<<<<< HEAD
         //not working --> file is read only...
         #ifdef APPINDICATOR
         QFile::remove(QDir::tempPath()+"/indicator_utlauncher.png");
         #endif
             
+=======
+        #ifdef APPINDICATOR
+        QFile::remove(QDir::tempPath()+"/indicator_utlauncher.png");
+        #endif
+>>>>>>> origin/master_newest
 
         QMainWindow::closeEvent(event);
     }
