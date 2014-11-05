@@ -291,10 +291,7 @@ public:
         locationsButton->setSizeHint(QSize(80, 64));
         buttonMap[locationsButton] = 0;
         
-<<<<<<< HEAD
         //only show when appindicator is disabled
-=======
->>>>>>> origin/master_newest
         #ifndef APPINDICATOR
         auto uiButton = new QListWidgetItem(contentsWidget);
         uiButton->setIcon(awesome->icon(fa::desktop));
@@ -304,10 +301,6 @@ public:
         uiButton->setSizeHint(QSize(80, 64));
         buttonMap[uiButton] = 1;
         #endif
-<<<<<<< HEAD
-=======
-        
->>>>>>> origin/master_newest
 
         connect(contentsWidget,
                 SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)),
