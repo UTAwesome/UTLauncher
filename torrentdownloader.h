@@ -11,7 +11,7 @@ class TorrentDownloader : public QObject
     Q_OBJECT
     QTimer progressTimer;
     
-    std::unique_ptr<TorrentDownloaderPrivate, std::function<void(TorrentDownloaderPrivate*)>> p;
+    std::unique_ptr<TorrentDownloaderPrivate, std::is_function<void(TorrentDownloaderPrivate*)>> p;
 public:
     TorrentDownloader();
     
